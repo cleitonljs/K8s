@@ -41,5 +41,22 @@ services:
     ports:
       - "8040:8080"
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Porta AMQP
+      - "15672:15672" # Painel web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+    networks:
+      - app-network
+
 volumes:
-  mysql_data:
+  mysql_data:  
+
+networks:
+  app-network:
+    driver: bridge

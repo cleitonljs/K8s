@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: fcg
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: payments-api
+
+  template:
+    metadata:
+      labels:
+        app: payments-api
+
+    spec:
+      containers:
+        - name: payments-api
+          image: payments-api:latest
+
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 8080
+
+          env:
+
+            # =========================================
+            # CONFIG MAP
+            # =========================================
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-api-config
+                  key: ASPNETCORE_ENVIRONMENT
+
+            - name: RabbitMQ__Host
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-api-config
+                  key: RabbitMQ__Host
+
+            - name: RabbitMQ__Port
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-api-config
+                  key: RabbitMQ__Port
+
+            - name: RabbitMQ__Queues__FGC
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-api-config
+                  key: RabbitMQ__Queues__FGC            
+
+            # =========================================
+            # SECRET
+            # =========================================
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: payments-api-secret
+                  key: ConnectionStrings__DefaultConnection
+
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: payments-api-secret
+                  key: RabbitMQ__Username
+
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: payments-api-secret
+                  key: RabbitMQ__Password

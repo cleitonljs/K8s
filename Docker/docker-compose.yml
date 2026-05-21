@@ -1,7 +1,28 @@
 services:
-  usuario-api:
+  users-api:
     build: 
       context: ../../UsersAPI
     image: users-api:latest
     ports:
-      - "8080:8080"
+      - "8010:8080"
+  
+  notifications-api:
+    build: 
+      context: ../../NotificationsAPI
+    image: notifications-api:latest
+    ports:
+      - "8020:8080"
+  
+  catalog-api:
+    build: 
+      context: ../../CatalogAPI
+    image: catalog-api:latest
+    ports:
+      - "8030:8080"
+
+  payments-api:
+    build: 
+      context: ../../PaymentsAPI
+    image: payments-api:latest
+    ports:
+      - "8040:8080"

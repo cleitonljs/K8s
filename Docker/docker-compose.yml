@@ -1,4 +1,18 @@
 services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: fcgdb
+
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+
   users-api:
     build: 
       context: ../../UsersAPI
@@ -26,3 +40,6 @@ services:
     image: payments-api:latest
     ports:
       - "8040:8080"
+
+volumes:
+  mysql_data:

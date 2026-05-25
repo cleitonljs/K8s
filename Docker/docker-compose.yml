@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: mysql-db
+    container_name: mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root123
@@ -11,32 +11,51 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-
+    networks:
+      - app-network
 
   users-api:
-    build: 
-      context: ../../UsersAPI
+    build:
+      context: ../../
+      dockerfile: UserAPI-Microservice/UsersAPI/Dockerfile
     image: users-api:latest
+
+    restart: always
+
+    environment:
+      ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      RabbitMQ__Queues__FCG: fcg-queue
+
     ports:
       - "8010:8080"
+
+    depends_on:
+      - mysql
+
+    networks:
+      - app-network
   
   notifications-api:
     build: 
-      context: ../../NotificationsAPI
+      context: ../../NotificationsAPI-Microservice/NotificationsAPI
     image: notifications-api:latest
     ports:
       - "8020:8080"
   
   catalog-api:
     build: 
-      context: ../../CatalogAPI
+      context: ../../CatalogAPI-Microservice/CatalogAPI
     image: catalog-api:latest
     ports:
       - "8030:8080"
 
   payments-api:
     build: 
-      context: ../../PaymentsAPI
+      context: ../../PaymentAPI-Microservice/PaymentsAPI
     image: payments-api:latest
     ports:
       - "8040:8080"

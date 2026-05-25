@@ -49,11 +49,11 @@ spec:
                   name: users-api-configmap
                   key: RabbitMQ__Port
 
-            - name: RabbitMQ__Queues__FGC
+            - name: RabbitMQ__Queues__FCG
               valueFrom:
                 configMapKeyRef:
                   name: users-api-configmap
-                  key: RabbitMQ__Queues__FGC            
+                  key: RabbitMQ__Queues__FCG            
 
             # =========================================
             # SECRET

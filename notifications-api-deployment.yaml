@@ -49,11 +49,11 @@ spec:
                   name: notifications-api-config
                   key: RabbitMQ__Port
 
-            - name: RabbitMQ__Queues__FGC
+            - name: RabbitMQ__Queues__FCG_User
               valueFrom:
                 configMapKeyRef:
                   name: notifications-api-config
-                  key: RabbitMQ__Queues__FGC            
+                  key: RabbitMQ__Queues__FCG_User            
 
             # =========================================
             # SECRET

@@ -17,7 +17,7 @@ services:
   users-api:
     build:
       context: ../../
-      dockerfile: UserAPI-Microservice/UsersAPI/Dockerfile
+      dockerfile: UserAPI-master/UsersAPI/Dockerfile
     image: users-api:latest
 
     restart: always
@@ -41,21 +41,24 @@ services:
   
   notifications-api:
     build: 
-      context: ../../NotificationsAPI-Microservice/NotificationsAPI
+      context: ../../
+      dockerfile: NotificationsAPI-master/NotificationsAPI/Dockerfile
     image: notifications-api:latest
     ports:
       - "8020:8080"
-  
+
   catalog-api:
     build: 
-      context: ../../CatalogAPI-Microservice/CatalogAPI
+      context: ../../
+      dockerfile: CatalogAPI-master/CatalogAPI/Dockerfile
     image: catalog-api:latest
     ports:
       - "8030:8080"
 
   payments-api:
     build: 
-      context: ../../PaymentAPI-Microservice/PaymentsAPI
+      context: ../../
+      dockerfile: PaymentAPI-master/PaymentsAPI/Dockerfile
     image: payments-api:latest
     ports:
       - "8040:8080"

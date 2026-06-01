@@ -49,11 +49,17 @@ spec:
                   name: payments-api-config
                   key: RabbitMQ__Port
 
-            - name: RabbitMQ__Queues__FGC
+            - name: RabbitMQ__Queues__FCG_Payment
               valueFrom:
                 configMapKeyRef:
                   name: payments-api-config
-                  key: RabbitMQ__Queues__FGC            
+                  key: RabbitMQ__Queues__FCG_Payment            
+
+            - name: RabbitMQ__Queues__FCG_Catalog
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-api-config
+                  key: RabbitMQ__Queues__FCG_Catalog
 
             # =========================================
             # SECRET

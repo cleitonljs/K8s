@@ -53,7 +53,13 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: notifications-api-config
-                  key: RabbitMQ__Queues__FCG_User            
+                  key: RabbitMQ__Queues__FCG_User
+
+            - name: RabbitMQ__Queues__FCG_Catalog
+              valueFrom:
+                configMapKeyRef:
+                  name: notifications-api-config
+                  key: RabbitMQ__Queues__FCG_Catalog
 
             # =========================================
             # SECRET

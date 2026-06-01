@@ -28,7 +28,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: guest
       RabbitMQ__Password: guest
-      RabbitMQ__Queues__FCG: fcg-queue
+      RabbitMQ__Queues__FCG_User: FCG-queue-user
 
     ports:
       - "8010:8080"
@@ -44,24 +44,77 @@ services:
       context: ../../
       dockerfile: NotificationsAPI-master/NotificationsAPI/Dockerfile
     image: notifications-api:latest
+
+    restart: always
+
+    environment:
+      ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      
+      RabbitMQ__Queues__FCG_User: FCG-queue-user      
+      RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
+      RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+    
     ports:
       - "8020:8080"
+
+    networks:
+      - app-network
 
   catalog-api:
     build: 
       context: ../../
       dockerfile: CatalogAPI-master/CatalogAPI/Dockerfile
     image: catalog-api:latest
+
+    restart: always
+
+    environment:
+      ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      
+      RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
+      RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+
     ports:
       - "8030:8080"
+
+    depends_on:
+      - mysql
+
+    networks:
+      - app-network
 
   payments-api:
     build: 
       context: ../../
       dockerfile: PaymentAPI-master/PaymentsAPI/Dockerfile
     image: payments-api:latest
+    
+    restart: always
+
     ports:
       - "8040:8080"
+
+    environment:
+      ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
+      
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      
+      RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
+      RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+
+    networks:
+      - app-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -80,5 +133,5 @@ volumes:
   mysql_data:  
 
 networks:
-  app-network:
-    driver: bridge
+ app-network:
+   driver: bridge

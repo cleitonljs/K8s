@@ -9,5 +9,6 @@ data:
   RabbitMQ__Host: rabbitmq
   RabbitMQ__Port: "5672"
 
-  RabbitMQ__Queues__FGC: FGC-queue
+  RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+  RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
 

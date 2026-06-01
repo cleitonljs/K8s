@@ -11,3 +11,5 @@ data:
 
   RabbitMQ__Queues__FCG_User: FCG-user-queue
 
+  RabbitMQ__Queues__FCG_Catalog: FCG-catalog-queue
+

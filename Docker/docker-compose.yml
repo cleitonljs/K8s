@@ -57,12 +57,19 @@ services:
       RabbitMQ__Queues__FCG_User: FCG-queue-user      
       RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
       RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
-    
+      API_Users__URL: http://users-api:8080
+      API_Users__Email: admin@email.com
+      API_Users__Senha: 1234@Abc
+      URL_API_Catalog: http://catalog-api:8080 
+
     ports:
       - "8020:8080"
 
     networks:
       - app-network
+
+    depends_on:
+      - rabbitmq
 
   catalog-api:
     build: 

@@ -55,8 +55,9 @@ services:
       RabbitMQ__Password: guest
       
       RabbitMQ__Queues__FCG_User: FCG-queue-user      
-      RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
-      RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+      RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
+      
+
       API_Users__URL: http://users-api:8080
       API_Users__Email: admin@email.com
       API_Users__Senha: 1234@Abc
@@ -119,12 +120,13 @@ services:
       
       RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
       RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+      RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
 
     networks:
       - app-network
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.3.1-management
     container_name: rabbitmq
     ports:
       - "5672:5672"   # Porta AMQP

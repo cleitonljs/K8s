@@ -55,11 +55,23 @@ spec:
                   name: notifications-api-config
                   key: RabbitMQ__Queues__FCG_User
 
-            - name: RabbitMQ__Queues__FCG_Catalog
+            - name: RabbitMQ__Queues__FCG_Notification
               valueFrom:
                 configMapKeyRef:
                   name: notifications-api-config
-                  key: RabbitMQ__Queues__FCG_Catalog
+                  key: RabbitMQ__Queues__FCG_Notification
+
+            - name: API_Users__URL
+              valueFrom:
+                configMapKeyRef:
+                  name: notifications-api-config
+                  key: API_Users__URL
+
+            - name: URL_API_Catalog
+              valueFrom:
+                configMapKeyRef:
+                  name: notifications-api-config
+                  key: URL_API_Catalog
 
             # =========================================
             # SECRET
@@ -81,3 +93,15 @@ spec:
                 secretKeyRef:
                   name: notifications-api-secret
                   key: RabbitMQ__Password
+
+            - name: API_Users__Email
+              valueFrom:
+                secretKeyRef:
+                  name: notifications-api-secret
+                  key: API_Users__Email
+
+            - name: API_Users__Senha
+              valueFrom:
+                secretKeyRef:
+                  name: notifications-api-secret
+                  key: API_Users__Senha

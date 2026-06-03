@@ -61,6 +61,12 @@ spec:
                   name: catalog-api-config
                   key: RabbitMQ__Queues__FCG_Catalog
 
+            - name: RabbitMQ__Queues__FCG_Notification
+              valueFrom:
+                configMapKeyRef:
+                  name: notifications-api-config
+                  key: RabbitMQ__Queues__FCG_Notification
+
             # =========================================
             # SECRET
             # =========================================

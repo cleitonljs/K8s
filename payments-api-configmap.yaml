@@ -11,4 +11,5 @@ data:
 
   RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
   RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
+  RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
 

@@ -9,7 +9,8 @@ data:
   RabbitMQ__Host: rabbitmq
   RabbitMQ__Port: "5672"
 
-  RabbitMQ__Queues__FCG_User: FCG-user-queue
-
-  RabbitMQ__Queues__FCG_Catalog: FCG-catalog-queue
+  RabbitMQ__Queues__FCG_User: FCG-queue-user
+  RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
+  API_Users__URL: http://users-api
+  URL_API_Catalog: http://catalog-api
 

@@ -6,7 +6,7 @@
 
 cd K8s\Docker
 
-docker compose up -d
+docker compose up --build
 
 cd..
 

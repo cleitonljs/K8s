@@ -42,7 +42,9 @@ Preparação do ambiente
 	2.2) Verique o status: minikube status
 	
 Copie as imagens para o minikube. Execute:
-minikube image load users-api:latest
+	minikube image load users-api:latest
+	minikube image load notifications-api:latest
+	minikube image load catalog-api:latest
 Esse comando pega a imagem local e copia para dentro do Minikube
 
 Crie os objetos Kubernetes, executando os seguinte comandos:
@@ -55,11 +57,57 @@ kubectl apply -f mysql-pvc.yaml
 kubectl apply -f mysql-secret.yaml
 kubectl apply -f mysql-deployment.yaml
 
+kubectl apply -f rabbitmq-secret.yaml
+kubectl apply -f rabbitmq-service.yaml
+kubectl apply -f rabbitmq-deplyment.yaml
+
 kubectl apply -f users-api-configmap.yaml
 kubectl apply -f users-api-secret.yaml
 kubectl apply -f users-api-service.yaml
 kubectl apply -f users-api-deployment.yaml
 
-Para abrir a users-api local na máquina é necessário criar um túnel, execute:
-minikube service users-api -n fcg
-será aberta a aplicação automaticamente, porém é necessário completar a url com swagger/index.html.
+kubectl apply -f notifications-api-secret.yaml
+kubectl apply -f notifications-api-configmap.yaml
+kubectl apply -f notifications-api-service.yaml
+kubectl apply -f notifications-api-deployment.yaml
+
+kubectl apply -f catalog-api-configmap.yaml
+kubectl apply -f catalog-api-secret.yaml
+kubectl apply -f catalog-api-service.yaml
+kubectl apply -f catalog-api-deployment.yaml
+
+Comandos do Kubernetes (com minikube):
+
+Ver status do minikube:
+	minikube status
+
+Iniciar minikube:
+	minikube start
+
+Ver deployments:
+	kubectl get deployments -n fcg
+
+Excluir deployment:
+	kubectl delete deployment notifications-api -n fcg
+	kubectl delete deployment catalog-api-deployment -n fcg
+
+Acessar o banco do minikube a partir da máquina local:	
+	kubectl port-forward service/mysql 3306:3306 -n fcg
+Depois disso, na sua máquina local você acessa:
+	Host: localhost
+	Port: 3306
+	User: root
+	Password: root123
+	
+Acessar o rabbitmq do minikube a partir da máquina local:	
+	kubectl port-forward service/rabbitmq 15672:15672 -n fcg
+	
+Acessar as apis local na máquina é necessário criar um túnel entre o minikube e a máquina local, execute:
+	minikube service users-api -n fcg
+	minikube service notifications-api -n fcg (comando para acessar a notifications-api)
+	minikube service catalog-api -n fcg (comando para acessar a catalog-api)
+Será aberta a aplicação automaticamente, porém é necessário completar a url com /swagger/index.html
+	
+Para ver os logs do deployment da notifications-api:
+	kubectl logs deployment/notifications-api -n fcg
+	kubectl logs deployment/catalog-api-deployment -n fcg

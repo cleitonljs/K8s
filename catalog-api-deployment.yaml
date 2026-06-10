@@ -58,7 +58,7 @@ spec:
             - name: RabbitMQ__Queues__FCG_Payment
               valueFrom:
                 configMapKeyRef:
-                  name: payments-api-config
+                  name: catalog-api-config
                   key: RabbitMQ__Queues__FCG_Payment     
 
             # =========================================

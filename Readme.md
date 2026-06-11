@@ -45,6 +45,7 @@ Copie as imagens para o minikube. Execute:
 	minikube image load users-api:latest
 	minikube image load notifications-api:latest
 	minikube image load catalog-api:latest
+	minikube image load payments-api:latest
 Esse comando pega a imagem local e copia para dentro do Minikube
 
 Crie os objetos Kubernetes, executando os seguinte comandos:
@@ -76,6 +77,11 @@ kubectl apply -f catalog-api-secret.yaml
 kubectl apply -f catalog-api-service.yaml
 kubectl apply -f catalog-api-deployment.yaml
 
+kubectl apply -f payments-api-configmap.yaml
+kubectl apply -f payments-api-secret.yaml
+kubectl apply -f payments-api-service.yaml
+kubectl apply -f payments-api-deployment.yaml
+
 Comandos do Kubernetes (com minikube):
 
 Ver status do minikube:
@@ -90,6 +96,7 @@ Ver deployments:
 Excluir deployment:
 	kubectl delete deployment notifications-api -n fcg
 	kubectl delete deployment catalog-api-deployment -n fcg
+	kubectl delete deployment payments-api -n fcg
 
 Acessar o banco do minikube a partir da máquina local:	
 	kubectl port-forward service/mysql 3306:3306 -n fcg
@@ -104,10 +111,12 @@ Acessar o rabbitmq do minikube a partir da máquina local:
 	
 Acessar as apis local na máquina é necessário criar um túnel entre o minikube e a máquina local, execute:
 	minikube service users-api -n fcg
-	minikube service notifications-api -n fcg (comando para acessar a notifications-api)
-	minikube service catalog-api -n fcg (comando para acessar a catalog-api)
+	minikube service notifications-api -n fcg
+	minikube service catalog-api -n fcg
+	minikube service payments-api -n fcg
 Será aberta a aplicação automaticamente, porém é necessário completar a url com /swagger/index.html
 	
 Para ver os logs do deployment da notifications-api:
 	kubectl logs deployment/notifications-api -n fcg
 	kubectl logs deployment/catalog-api-deployment -n fcg
+	kubectl logs deployment/payments-api -n fcg

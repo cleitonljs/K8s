@@ -63,28 +63,46 @@ kubectl apply -f mysql-secret.yaml
 kubectl apply -f mysql-deployment.yaml
 
 kubectl apply -f rabbitmq-secret.yaml
+
 kubectl apply -f rabbitmq-service.yaml
+
 kubectl apply -f rabbitmq-deplyment.yaml
 
 kubectl apply -f users-api-configmap.yaml
+
 kubectl apply -f users-api-secret.yaml
+
 kubectl apply -f users-api-service.yaml
+
 kubectl apply -f users-api-deployment.yaml
 
+
 kubectl apply -f notifications-api-secret.yaml
+
 kubectl apply -f notifications-api-configmap.yaml
+
 kubectl apply -f notifications-api-service.yaml
+
 kubectl apply -f notifications-api-deployment.yaml
 
+
 kubectl apply -f catalog-api-configmap.yaml
+
 kubectl apply -f catalog-api-secret.yaml
+
 kubectl apply -f catalog-api-service.yaml
+
 kubectl apply -f catalog-api-deployment.yaml
 
+
 kubectl apply -f payments-api-configmap.yaml
+
 kubectl apply -f payments-api-secret.yaml
+
 kubectl apply -f payments-api-service.yaml
+
 kubectl apply -f payments-api-deployment.yaml
+
 
 Comandos do Kubernetes (com minikube):
 

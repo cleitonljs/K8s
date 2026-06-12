@@ -4,7 +4,7 @@
 - Baixe e descompacte o projeto ou clone os repositórios (UsersAPI, CatalogAPI, NotificationsAPI, PaymentsAPI e K8s) na pasta que você criou.
 - Abra o terminal na pasta do projeto baixado ou clonado e digite:
 
-cd K8s\Docker
+cd K8s\Docker-Compose
 
 docker compose up --build
 

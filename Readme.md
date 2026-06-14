@@ -34,94 +34,72 @@ APIs:
  
 # Instruções de uso para rodar via Kubernetes
 
-Preparação do ambiente
+Preparação do ambiente para rodar o minikube via docker para simular um ambiente Kubernetes local na máquina
 
-1) Instalar o Docker.
-2) Instalar o minikube para simular um ambiente Kubernetes local na máquina.
-	2.1) Inicie o Minikube usando Docker, executando o seguinte comando: minikube start --driver=docker
-	2.2) Verique o status: minikube status
+Iniciar minikube:
+	minikube delete
+	minikube start --driver=docker
 	
-Copie as imagens para o minikube. Execute:
+Para limpar os artefatos do minikube:
+	kubectl delete all --all -A
+	kubectl delete configmaps --all -A
+	kubectl delete secrets --all -A
+	kubectl delete pvc --all -A
+	kubectl delete ingress --all -A
+	
+Ver todo conteúdo do fcg:
+	kubectl get all -n fcg
+
+Copie as imagens para o minikube. Esse comando pega a imagem local e copia para dentro do Minikube:
 	minikube image load users-api:latest
 	minikube image load notifications-api:latest
 	minikube image load catalog-api:latest
 	minikube image load payments-api:latest
-Esse comando pega a imagem local e copia para dentro do Minikube
 
-Crie os objetos Kubernetes, executando os seguinte comandos:
+Ver as imagens do minikube:
+	minikube ssh
+	crictl images
 	
-kubectl apply -f namespace.yaml
-
+kubectl apply -f _fcg-namespace.yaml
 
 kubectl apply -f mysql-service.yaml
-
 kubectl apply -f mysql-configmap.yaml
-
 kubectl apply -f mysql-pvc.yaml
-
 kubectl apply -f mysql-secret.yaml
-
 kubectl apply -f mysql-deployment.yaml
-
-
+	
 kubectl apply -f rabbitmq-secret.yaml
-
 kubectl apply -f rabbitmq-service.yaml
-
 kubectl apply -f rabbitmq-deplyment.yaml
-
+	
 kubectl apply -f users-api-configmap.yaml
-
 kubectl apply -f users-api-secret.yaml
-
 kubectl apply -f users-api-service.yaml
-
 kubectl apply -f users-api-deployment.yaml
 
-
-
-kubectl apply -f notifications-api-secret.yaml
-
-kubectl apply -f notifications-api-configmap.yaml
-
-kubectl apply -f notifications-api-service.yaml
-
-kubectl apply -f notifications-api-deployment.yaml
-
-
 kubectl apply -f catalog-api-configmap.yaml
-
 kubectl apply -f catalog-api-secret.yaml
-
 kubectl apply -f catalog-api-service.yaml
-
 kubectl apply -f catalog-api-deployment.yaml
 
+kubectl apply -f notifications-api-secret.yaml
+kubectl apply -f notifications-api-configmap.yaml
+kubectl apply -f notifications-api-service.yaml
+kubectl apply -f notifications-api-deployment.yaml
 
 kubectl apply -f payments-api-configmap.yaml
-
 kubectl apply -f payments-api-secret.yaml
-
 kubectl apply -f payments-api-service.yaml
-
 kubectl apply -f payments-api-deployment.yaml
+	
+Criar todos os objetos da pasta:
+	primeiro criar o pvc:
+		kubectl apply -f mysql-pvc.yaml
+	depois criar outros arquivos:
+		kubectl apply -f .
 
-
-Comandos do Kubernetes (com minikube):
-
-Ver status do minikube:
-	minikube status
-
-Iniciar minikube:
-	minikube start
-
-Ver deployments:
-	kubectl get deployments -n fcg
-
-Excluir deployment:
-	kubectl delete deployment notifications-api -n fcg
-	kubectl delete deployment catalog-api-deployment -n fcg
-	kubectl delete deployment payments-api -n fcg
+Para descobrir o motivo do Pending:
+	kubectl describe pod/mysql-56c6dbcd55-mfkjt -n fcg
 
 Acessar o banco do minikube a partir da máquina local:	
 	kubectl port-forward service/mysql 3306:3306 -n fcg
@@ -145,3 +123,4 @@ Para ver os logs do deployment da notifications-api:
 	kubectl logs deployment/notifications-api -n fcg
 	kubectl logs deployment/catalog-api-deployment -n fcg
 	kubectl logs deployment/payments-api -n fcg
+	kubectl logs pod/mysql-56c6dbcd55-59crx -n fcg

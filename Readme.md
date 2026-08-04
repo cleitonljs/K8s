@@ -50,6 +50,9 @@ Para limpar os artefatos do minikube:
 
 Ver todo conteúdo do fcg:
 	kubectl get all -n fcg
+	
+Ver pods:
+	kubectl get pods -n fcg
 
 Copie as imagens para o minikube. Esse comando pega a imagem local e copia para dentro do Minikube:
 	minikube image load users-api:latest

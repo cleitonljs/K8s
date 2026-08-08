@@ -1,3 +1,131 @@
+# Tech-Challenge - Fase 3
+
+segue abaixo passo a passo para levantar o Kubernetes utilizando o Kubernetes do Docker desktop.
+
+1. limpar o Kubernetes no Docker-desktop
+
+verificar se está habilitado o Kubernetes do Docker desktop:
+kubectl config current-context
+
+2. abrir power shell e posicionar na pasta C:\Tech-Challenge-Fase2\K8s\Kubernetes
+
+Criar namespace
+kubectl apply -f _fcg-namespace.yaml
+
+1. MySQL
+kubectl apply -f mysql-configmap.yaml
+kubectl apply -f mysql-secret.yaml
+kubectl apply -f mysql-pvc.yaml
+kubectl apply -f mysql-service.yaml
+kubectl apply -f mysql-deployment.yaml
+
+kubectl rollout status deployment/mysql -n fcg --timeout=300s
+
+2. RabbitMQ
+kubectl apply -f rabbitmq-secret.yaml
+kubectl apply -f rabbitmq-service.yaml
+kubectl apply -f rabbitmq-deplyment.yaml
+
+kubectl rollout status deployment/rabbitmq -n fcg --timeout=300s
+
+3. Users API
+kubectl apply -f users-api-configmap.yaml
+kubectl apply -f users-api-secret.yaml
+kubectl apply -f users-api-service.yaml
+kubectl apply -f users-api-deployment.yaml
+4. Catalog API
+kubectl apply -f catalog-api-configmap.yaml
+kubectl apply -f catalog-api-secret.yaml
+kubectl apply -f catalog-api-service.yaml
+kubectl apply -f catalog-api-deployment.yaml
+5. Payments API
+kubectl apply -f payments-api-configmap.yaml
+kubectl apply -f payments-api-secret.yaml
+kubectl apply -f payments-api-service.yaml
+kubectl apply -f payments-api-deployment.yaml
+6. Notifications API
+kubectl apply -f notifications-api-configmap.yaml
+kubectl apply -f notifications-api-secret.yaml
+kubectl apply -f notifications-api-service.yaml
+kubectl apply -f notifications-api-deployment.yaml
+Aguarde todas as APIs:
+kubectl rollout status deployment/users-api-deployment -n fcg --timeout=300s
+kubectl rollout status deployment/catalog-api-deployment -n fcg --timeout=300s
+kubectl rollout status deployment/payments-api -n fcg --timeout=300s
+kubectl rollout status deployment/notifications-api -n fcg --timeout=300s
+Confira:
+kubectl get pods -n fcg
+7. PostgreSQL do Kong
+kubectl apply -f kong-secret.yaml
+kubectl apply -f kong-environment-configmap.yaml
+kubectl apply -f kong-postgres-init-configmap.yaml
+kubectl apply -f kong-postgres-pvc.yaml
+kubectl apply -f kong-postgres-service.yaml
+kubectl apply -f kong-postgres-deployment.yaml
+
+kubectl rollout status deployment/kong-database -n fcg --timeout=300s
+
+8. Migrations do Kong
+kubectl apply -f kong-migrations-job.yaml
+
+kubectl wait --for=condition=complete job/kong-migrations `
+  -n fcg `
+  --timeout=300s
+Confira os logs:
+kubectl logs job/kong-migrations -n fcg
+
+9. Kong Gateway e Kong Manager
+kubectl apply -f kong-deployment.yaml
+kubectl apply -f kong-service.yaml
+
+kubectl rollout status deployment/kong -n fcg --timeout=300s
+
+10. Cadastrar as rotas
+kubectl apply -f kong-routes-job.yaml
+
+kubectl wait --for=condition=complete job/kong-routes `
+  -n fcg `
+  --timeout=300s
+Confira:
+kubectl logs job/kong-routes -n fcg
+
+11. Preparar e subir o Konga
+kubectl apply -f konga-prepare-job.yaml
+
+kubectl wait --for=condition=complete job/konga-prepare `
+  -n fcg `
+  --timeout=300s
+
+kubectl apply -f konga-deployment.yaml
+kubectl apply -f konga-service.yaml
+
+kubectl rollout status deployment/konga -n fcg --timeout=300s
+
+12. Verificação final
+kubectl get pods,services,jobs,pvc -n fcg
+Os Deployments devem estar Running, os Jobs devem estar Completed e os PVCs devem estar Bound.
+
+13. Acessar o Kong Manager
+Abra um terminal e mantenha-o aberto:
+kubectl port-forward service/kong-manager 8002:8002 -n fcg
+Abra outro terminal:
+kubectl port-forward service/kong-admin 8001:8001 -n fcg
+Acesse:
+http://localhost:8002
+
+14. Acessar as APIs pelo gateway
+Em outro terminal:
+kubectl port-forward service/kong 8080:8000 -n fcg
+Teste:
+curl.exe -i http://localhost:8080/payments/api/health
+curl.exe -i http://localhost:8080/notifications/api/health
+Endereços finais:
+Kong Manager: http://localhost:8002
+Admin API:    http://localhost:8001
+Gateway:      http://localhost:8080
+
+# Tech-Challenge - Fase 2
+
 # Instruções de uso para rodar via Docker Compose
 
 - Crie uma pasta para salvar os projetos baixados
@@ -122,3 +250,5 @@ Para ver os logs do deployment da notifications-api:
 	kubectl logs deployment/catalog-api-deployment -n fcg
 	kubectl logs deployment/payments-api -n fcg
 	kubectl logs pod/mysql-56c6dbcd55-59crx -n fcg
+	
+	

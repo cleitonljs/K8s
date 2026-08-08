@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+    spec:
+      initContainers:
+        - name: wait-for-migrations
+          image: kong:3.4
+          command: ["kong", "migrations", "list"]
+          envFrom:
+            - configMapRef:
+                name: kong-environment
+          env:
+            - name: KONG_PG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-user
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-password
+      containers:
+        - name: kong
+          image: kong:3.4
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: kong-environment
+          env:
+            - name: KONG_PG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-user
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-password
+          ports:
+            - name: proxy
+              containerPort: 8000
+            - name: admin
+              containerPort: 8001
+            - name: manager
+              containerPort: 8002
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: admin
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: admin
+            initialDelaySeconds: 20
+            periodSeconds: 10

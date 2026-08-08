@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-routes
+  namespace: fcg
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        app: kong-routes
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: configure-routes
+          image: curlimages/curl:8.10.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              until curl --fail --silent http://kong-admin:8001/status > /dev/null; do sleep 2; done
+
+              configure() {
+                name="$1"
+                upstream="$2"
+                path="$3"
+
+                curl --fail --silent --show-error --request PUT \
+                  "http://kong-admin:8001/services/${name}" \
+                  --data "url=${upstream}"
+
+                curl --fail --silent --show-error --request PUT \
+                  "http://kong-admin:8001/routes/${name}-route" \
+                  --data "service.name=${name}" \
+                  --data "paths[]=${path}" \
+                  --data "strip_path=true"
+              }
+
+              configure users-api http://users-api:80 /users
+              configure catalog-api http://catalog-api:80 /catalog
+              configure payments-api http://payments-api:80 /payments
+              configure notifications-api http://notifications-api:80 /notifications

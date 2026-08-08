@@ -12,6 +12,9 @@ kubectl config current-context
 Criar namespace
 kubectl apply -f _fcg-namespace.yaml
 
+Criar o segredo JWT compartilhado entre Users API, Catalog API e Kong:
+kubectl apply -f jwt-secret.yaml
+
 1. MySQL
 kubectl apply -f mysql-configmap.yaml
 kubectl apply -f mysql-secret.yaml
@@ -89,6 +92,9 @@ kubectl wait --for=condition=complete job/kong-routes `
 Confira:
 kubectl logs job/kong-routes -n fcg
 
+O job cria as rotas publicas de login e cadastro, cadastra a credencial HS256
+e ativa a validacao JWT nas rotas gerais de Users API e Catalog API.
+
 11. Preparar e subir o Konga
 kubectl apply -f konga-prepare-job.yaml
 
@@ -116,9 +122,11 @@ http://localhost:8002
 14. Acessar as APIs pelo gateway
 Em outro terminal:
 kubectl port-forward service/kong 8080:8000 -n fcg
+
 Teste:
 curl.exe -i http://localhost:8080/payments/api/health
 curl.exe -i http://localhost:8080/notifications/api/health
+
 Endereços finais:
 Kong Manager: http://localhost:8002
 Admin API:    http://localhost:8001

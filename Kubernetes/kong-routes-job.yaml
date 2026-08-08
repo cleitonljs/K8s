@@ -15,6 +15,12 @@ spec:
         - name: configure-routes
           image: curlimages/curl:8.10.1
           imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-jwt-secret
+                  key: secret-key
           command:
             - sh
             - -ec
@@ -41,3 +47,41 @@ spec:
               configure catalog-api http://catalog-api:80 /catalog
               configure payments-api http://payments-api:80 /payments
               configure notifications-api http://notifications-api:80 /notifications
+
+              # Rotas publicas, mais especificas que a rota protegida /users.
+              # O path no Service preserva o endpoint apos o strip_path do Kong.
+              configure users-login http://users-api:80/login /users/login
+              configure users-create http://users-api:80/usuario/criar /users/usuario/criar
+
+              curl --fail --silent --show-error --request PUT \
+                "http://kong-admin:8001/consumers/fcg-api" \
+                --data "username=fcg-api"
+
+              jwt_credentials="$(curl --fail --silent --show-error \
+                "http://kong-admin:8001/consumers/fcg-api/jwt")"
+
+              if ! printf '%s' "$jwt_credentials" | grep --quiet '"key":"FCG-API"'; then
+                curl --fail --silent --show-error --request POST \
+                  "http://kong-admin:8001/consumers/fcg-api/jwt" \
+                  --data "key=FCG-API" \
+                  --data "secret=${JWT_SECRET}" \
+                  --data "algorithm=HS256"
+              fi
+
+              enable_jwt() {
+                route="$1"
+                plugins="$(curl --fail --silent --show-error \
+                  "http://kong-admin:8001/routes/${route}/plugins")"
+
+                if ! printf '%s' "$plugins" | grep --quiet '"name":"jwt"'; then
+                  curl --fail --silent --show-error --request POST \
+                    "http://kong-admin:8001/routes/${route}/plugins" \
+                    --data "name=jwt" \
+                    --data "config.key_claim_name=iss" \
+                    --data "config.claims_to_verify[]=exp" \
+                    --data "config.run_on_preflight=false"
+                fi
+              }
+
+              enable_jwt users-api-route
+              enable_jwt catalog-api-route

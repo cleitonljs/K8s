@@ -75,3 +75,9 @@ spec:
                 secretKeyRef:
                   name: users-api-secret
                   key: RabbitMQ__Password
+
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-jwt-secret
+                  key: secret-key

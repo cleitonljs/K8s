@@ -366,6 +366,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # LocalStack
-Docker-Compose/localstack/
 Docker-Compose/payload.json
 Docker-Compose/response.json

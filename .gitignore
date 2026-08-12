@@ -121,6 +121,9 @@ ipch/
 # Visual Studio Trace Files
 *.e2e
 
+# Environment files
+.env
+
 # TFS 2012 Local Workspace
 $tf/
 
@@ -361,3 +364,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# LocalStack
+Docker-Compose/localstack/
+Docker-Compose/payload.json
+Docker-Compose/response.json

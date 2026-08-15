@@ -1,0 +1,64 @@
+{
+  "uid": "fcg-api-database",
+  "title": "Banco de Dados (MySQL)",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "custom",
+        "label": "API",
+        "query": "catalog-api : CatalogAPI, users-api : UsersAPI",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    { "id": 1, "type": "stat", "title": "Queries/s", "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum(rate(db_query_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+    { "id": 2, "type": "stat", "title": "DB P95", "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [ { "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A" } ] },
+    { "id": 3, "type": "stat", "title": "Conexões (ativas)", "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum(db_connections_active{job=~\"$job\"})", "refId": "A" } ] },
+    { "id": 4, "type": "stat", "title": "DB Errors/s", "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum(rate(db_query_errors_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+
+    { "id": 10, "type": "timeseries", "title": "Queries/s", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum by (job) (rate(db_query_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}}" } ] },
+    { "id": 11, "type": "timeseries", "title": "Duração das queries: P50 / P95 / P99", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A", "legendFormat": "P50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "B", "legendFormat": "P95" },
+        { "expr": "histogram_quantile(0.99, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "C", "legendFormat": "P99" }
+      ] },
+
+    { "id": 12, "type": "timeseries", "title": "Conexões: ativas vs. máximo do pool", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum by (job) (db_connections_active{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}} - ativas" },
+        { "expr": "sum by (job) (db_connections_max{job=~\"$job\"})", "refId": "B", "legendFormat": "{{job}} - máximo" }
+      ] },
+    { "id": 13, "type": "timeseries", "title": "Erros de banco de dados", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum by (job, operation, error_type) (rate(db_query_errors_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}} - {{operation}} ({{error_type}})" } ] },
+
+    { "id": 14, "type": "table", "title": "Operações mais lentas (P95)", "gridPos": { "h": 9, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [ { "expr": "topk(15, histogram_quantile(0.95, sum by (le, job, operation, entity) (rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval]))))", "format": "table", "instant": true, "refId": "A" } ] }
+  ]
+}

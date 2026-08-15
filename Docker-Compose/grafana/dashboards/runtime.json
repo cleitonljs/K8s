@@ -1,0 +1,74 @@
+{
+  "uid": "fcg-api-runtime",
+  "title": "API — Runtime / Infraestrutura",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "custom",
+        "label": "API",
+        "query": "catalog-api : CatalogAPI, users-api : UsersAPI",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    { "id": 1, "type": "stat", "title": "CPU", "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "targets": [ { "expr": "sum(rate(process_cpu_time_seconds_total{job=~\"$job\"}[$__rate_interval])) * 100", "refId": "A" } ] },
+    { "id": 2, "type": "stat", "title": "Memória (Working Set)", "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [ { "expr": "sum(process_memory_usage_bytes{job=~\"$job\"})", "refId": "A" } ] },
+    { "id": 3, "type": "stat", "title": "Threads", "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum(process_runtime_dotnet_thread_pool_threads_count{job=~\"$job\"})", "refId": "A" } ] },
+    { "id": 4, "type": "stat", "title": "GC Gen 2 (total)", "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum(process_runtime_dotnet_gc_collections_count_total{job=~\"$job\", generation=\"gen2\"})", "refId": "A" } ] },
+    { "id": 5, "type": "stat", "title": "Exceptions/s", "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum(rate(process_runtime_dotnet_exceptions_count_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+
+    { "id": 10, "type": "timeseries", "title": "CPU %", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+      "targets": [ { "expr": "sum by (job, cpu_mode) (rate(process_cpu_time_seconds_total{job=~\"$job\"}[$__rate_interval])) * 100", "refId": "A", "legendFormat": "{{job}} - {{cpu_mode}}" } ] },
+    { "id": 11, "type": "timeseries", "title": "Memória: Working Set / Heap / Alocações", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum by (job) (process_memory_usage_bytes{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}} - working set" },
+        { "expr": "sum by (job) (process_runtime_dotnet_gc_objects_size_bytes{job=~\"$job\"})", "refId": "B", "legendFormat": "{{job}} - heap" },
+        { "expr": "sum by (job) (rate(process_runtime_dotnet_gc_allocations_size_bytes_total{job=~\"$job\"}[$__rate_interval]))", "refId": "C", "legendFormat": "{{job}} - allocations/s" }
+      ] },
+
+    { "id": 12, "type": "timeseries", "title": "Garbage Collector: coleções por geração", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum by (job, generation) (rate(process_runtime_dotnet_gc_collections_count_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}} - {{generation}}" }
+      ] },
+    { "id": 13, "type": "timeseries", "title": "GC: tempo gasto (ms)", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "targets": [ { "expr": "sum by (job) (rate(process_runtime_dotnet_gc_duration_nanoseconds_total{job=~\"$job\"}[$__rate_interval])) / 1e6", "refId": "A", "legendFormat": "{{job}}" } ] },
+
+    { "id": 14, "type": "timeseries", "title": "ThreadPool: threads e fila", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum by (job) (process_runtime_dotnet_thread_pool_threads_count{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}} - threads" },
+        { "expr": "sum by (job) (process_runtime_dotnet_thread_pool_queue_length{job=~\"$job\"})", "refId": "B", "legendFormat": "{{job}} - queue length" }
+      ] },
+    { "id": 15, "type": "timeseries", "title": "Exceptions/s", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "sum by (job) (rate(process_runtime_dotnet_exceptions_count_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}}" } ] }
+  ]
+}

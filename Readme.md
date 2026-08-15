@@ -127,6 +127,15 @@ Teste:
 curl.exe -i http://localhost:8080/payments/api/health
 curl.exe -i http://localhost:8080/notifications/api/health
 
+Faça login para obter o token JWT (usuário admin padrão).
+curl.exe -i http://localhost:8080/users/login -H "Content-Type: application/json" --% -d "{\"Email\":\"admin@email.com\",\"Senha\":\"1234@Abc\"}"
+
+Copie o valor de "token" do retorno acima e use-o para testar a validação JWT do Kong nas rotas protegidas de Users API e Catalog API:
+curl.exe -i http://localhost:8080/users/usuario/todos -H "Authorization: Bearer <TOKEN>"
+curl.exe -i http://localhost:8080/catalog/game/todos -H "Authorization: Bearer <TOKEN>"
+
+Sem o header Authorization (ou com um token inválido), o Kong deve responder 401 Unauthorized antes mesmo de a requisição chegar às APIs.
+
 Endereços finais:
 Kong Manager: http://localhost:8002
 Admin API:    http://localhost:8001

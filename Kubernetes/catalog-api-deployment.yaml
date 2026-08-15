@@ -53,13 +53,25 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: catalog-api-config
-                  key: RabbitMQ__Queues__FCG_Catalog       
-                  
+                  key: RabbitMQ__Queues__FCG_Catalog
+
             - name: RabbitMQ__Queues__FCG_Payment
               valueFrom:
                 configMapKeyRef:
                   name: catalog-api-config
-                  key: RabbitMQ__Queues__FCG_Payment     
+                  key: RabbitMQ__Queues__FCG_Payment
+
+            - name: MongoSettings__Database
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-api-config
+                  key: MongoSettings__Database
+
+            - name: MongoSettings__ReviewsCollection
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-api-config
+                  key: MongoSettings__ReviewsCollection
 
             # =========================================
             # SECRET
@@ -87,3 +99,15 @@ spec:
                 secretKeyRef:
                   name: fcg-jwt-secret
                   key: secret-key
+
+            - name: MongoSettings__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-api-secret
+                  key: MongoSettings__ConnectionString
+
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-api-secret
+                  key: ConnectionStrings__Redis

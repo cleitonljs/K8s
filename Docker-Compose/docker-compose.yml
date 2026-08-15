@@ -23,16 +23,49 @@ services:
 
   rabbitmq:
     container_name: rabbitmq
-    
+
     image: rabbitmq:4.3.1-management
-    
+
     ports:
       - "5672:5672"   # Porta AMQP
       - "15672:15672" # Painel web
-    
+
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
+    networks:
+      - app-network
+
+  mongo:
+    container_name: mongo
+
+    image: mongo:7
+
+    restart: always
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root123
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongo_data:/data/db
+
+    networks:
+      - app-network
+
+  redis:
+    container_name: redis
+
+    image: redis:7-alpine
+
+    restart: always
+
+    ports:
+      - "6379:6379"
 
     networks:
       - app-network
@@ -43,7 +76,7 @@ services:
     build:
       context: ../../UsersAPI
       dockerfile: Dockerfile
-      
+
     image: users-api:latest
 
     restart: always
@@ -64,34 +97,34 @@ services:
 
     networks:
       - app-network
-  
+
   notifications-api:
     container_name: notifications-api
-      
-    build: 
+
+    build:
       context: ../../NotificationsAPI
       dockerfile: Dockerfile
-      
+
     image: notifications-api:latest
 
     restart: always
 
     environment:
       ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
-      
+
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: 5672
       RabbitMQ__Username: guest
       RabbitMQ__Password: guest
-      
-      RabbitMQ__Queues__FCG_User: FCG-queue-user      
+
+      RabbitMQ__Queues__FCG_User: FCG-queue-user
       RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
-      
+
       API_Users__URL: http://users-api:8080
       API_Users__Email: admin@email.com
       API_Users__Senha: 1234@Abc
-      
-      URL_API_Catalog: http://catalog-api:8080 
+
+      URL_API_Catalog: http://catalog-api:8080
 
     ports:
       - "8020:8080"
@@ -104,11 +137,11 @@ services:
 
   catalog-api:
     container_name: catalog-api
-  
-    build: 
+
+    build:
       context: ../../CatalogAPI
       dockerfile: Dockerfile
-      
+
     image: catalog-api:latest
 
     restart: always
@@ -119,28 +152,36 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: guest
       RabbitMQ__Password: guest
-      
+
       RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
       RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+
+      # Item 4, Fase 3 — persistência poliglota e cache
+      MongoSettings__ConnectionString: "mongodb://root:root123@mongo:27017"
+      MongoSettings__Database: fcg_catalog
+      MongoSettings__ReviewsCollection: game_reviews
+      ConnectionStrings__Redis: "redis:6379"
 
     ports:
       - "8030:8080"
 
     depends_on:
       - mysql
+      - mongo
+      - redis
 
     networks:
       - app-network
 
   payments-api:
     container_name: payments-api
-    
-    build: 
+
+    build:
       context: ../../PaymentsAPI
       dockerfile: Dockerfile
-      
+
     image: payments-api:latest
-    
+
     restart: always
 
     ports:
@@ -148,12 +189,12 @@ services:
 
     environment:
       ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
-      
+
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Port: 5672
       RabbitMQ__Username: guest
       RabbitMQ__Password: guest
-      
+
       RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
       RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
       RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
@@ -162,7 +203,8 @@ services:
       - app-network
 
 volumes:
-  mysql_data:  
+  mysql_data:
+  mongo_data:
 
 networks:
  app-network:

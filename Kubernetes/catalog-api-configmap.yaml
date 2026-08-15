@@ -11,3 +11,6 @@ data:
 
   RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
   RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
+
+  MongoSettings__Database: fcg_catalog
+  MongoSettings__ReviewsCollection: game_reviews

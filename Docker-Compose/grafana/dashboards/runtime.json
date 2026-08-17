@@ -12,7 +12,7 @@
         "name": "job",
         "type": "custom",
         "label": "API",
-        "query": "catalog-api : CatalogAPI, users-api : UsersAPI",
+        "query": "catalog-api, users-api",
         "multi": true,
         "includeAll": true,
         "current": { "text": "All", "value": "$__all" }

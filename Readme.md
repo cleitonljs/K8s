@@ -141,6 +141,53 @@ Kong Manager: http://localhost:8002
 Admin API:    http://localhost:8001
 Gateway:      http://localhost:8080
 
+# Observabilidade (Prometheus + Grafana)
+
+CatalogAPI e UsersAPI (.NET 8) são instrumentadas com OpenTelemetry e expõem métricas Prometheus no
+próprio processo, em `/metrics`. Não é necessário nenhum agente ou sidecar adicional.
+
+
+
+## Rodar via Docker Compose
+
+	cd K8s\Docker-Compose
+	docker compose up --build
+
+Prometheus: http://localhost:9090 (targets em Status > Targets)
+Grafana:    http://localhost:3001  (login: admin / admin123)
+
+## Rodar via Kubernetes
+
+Após subir Users API e Catalog API normalmente (passos 3 e 4 no topo deste arquivo):
+
+	kubectl apply -f prometheus-configmap.yaml
+	kubectl apply -f prometheus-pvc.yaml
+	kubectl apply -f prometheus-service.yaml
+	kubectl apply -f prometheus-deployment.yaml
+
+	kubectl apply -f grafana-datasource-configmap.yaml
+	kubectl apply -f grafana-dashboards-configmap.yaml
+	kubectl apply -f grafana-secret.yaml
+	kubectl apply -f grafana-service.yaml
+	kubectl apply -f grafana-deployment.yaml
+
+	kubectl rollout status deployment/prometheus-deployment -n fcg --timeout=300s
+	kubectl rollout status deployment/grafana-deployment -n fcg --timeout=300s
+
+Verificar os targets do Prometheus:
+	kubectl port-forward service/prometheus 9090:9090 -n fcg
+	Acesse http://localhost:9090/targets — catalog-api e users-api devem estar "UP".
+
+Acessar o Grafana (exposto via NodePort, mesmo padrão do Konga):
+	minikube service grafana -n fcg
+	(ou, em cluster local do Docker Desktop: http://localhost:30030)
+	login: admin / admin123 (definida em grafana-secret.yaml)
+
+Prometheus não é exposto via NodePort/Ingress — só é alcançável dentro do cluster (o Grafana já
+concentra a visualização) ou via `port-forward` pontual para depuração.
+
+
+
 # Tech-Challenge - Fase 2
 
 # Instruções de uso para rodar via Docker Compose
@@ -268,50 +315,5 @@ Para ver os logs do deployment da notifications-api:
 	kubectl logs deployment/payments-api -n fcg
 	kubectl logs pod/mysql-56c6dbcd55-59crx -n fcg
 	
-# Observabilidade (Prometheus + Grafana)
-
-CatalogAPI e UsersAPI (.NET 8) são instrumentadas com OpenTelemetry e expõem métricas Prometheus no
-próprio processo, em `/metrics`. Não é necessário nenhum agente ou sidecar adicional.
-
-
-
-## Rodar via Docker Compose
-
-	cd K8s\Docker-Compose
-	docker compose up --build
-
-Prometheus: http://localhost:9090 (targets em Status > Targets)
-Grafana:    http://localhost:3001  (login: admin / admin123)
-
-## Rodar via Kubernetes
-
-Após subir Users API e Catalog API normalmente (passos 3 e 4 no topo deste arquivo):
-
-	kubectl apply -f prometheus-configmap.yaml
-	kubectl apply -f prometheus-pvc.yaml
-	kubectl apply -f prometheus-service.yaml
-	kubectl apply -f prometheus-deployment.yaml
-
-	kubectl apply -f grafana-datasource-configmap.yaml
-	kubectl apply -f grafana-dashboards-configmap.yaml
-	kubectl apply -f grafana-secret.yaml
-	kubectl apply -f grafana-service.yaml
-	kubectl apply -f grafana-deployment.yaml
-
-	kubectl rollout status deployment/prometheus-deployment -n fcg --timeout=300s
-	kubectl rollout status deployment/grafana-deployment -n fcg --timeout=300s
-
-Verificar os targets do Prometheus:
-	kubectl port-forward service/prometheus 9090:9090 -n fcg
-	Acesse http://localhost:9090/targets — catalog-api e users-api devem estar "UP".
-
-Acessar o Grafana (exposto via NodePort, mesmo padrão do Konga):
-	minikube service grafana -n fcg
-	(ou, em cluster local do Docker Desktop: http://localhost:30030)
-	login: admin / admin123 (definida em grafana-secret.yaml)
-
-Prometheus não é exposto via NodePort/Ingress — só é alcançável dentro do cluster (o Grafana já
-concentra a visualização) ou via `port-forward` pontual para depuração.
-
 
 	

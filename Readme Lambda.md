@@ -15,14 +15,17 @@
 
 4. Deixar o Docker Desktop rodando.
 
-5. Rodar o comando abaixo:
+5. Criar arquivo .env na pasta C:\Tech-Challenge-Fase2\K8s\Docker-Compose. Esse arquivo não possui nome, é só a extensão mesmo. No seu conteúdo colar:
+	LOCALSTACK_AUTH_TOKEN="Seu token"
+
+6. Rodar o comando abaixo:
 	PS C:\git\TecChanleng(Grupo)\K8s\Docker-Compose> Docker compose up -d
 
-6. Em seguida, seguir o fluxo de criar usuário ou adquirir jogo no catálogo.
+7. Em seguida, seguir o fluxo de criar usuário ou adquirir jogo no catálogo.
 
-7. Container criado para o serverless (somente para a requisição; depois ele morre).
+8. Container criado para o serverless (somente para a requisição; depois ele morre).
 
-8. No ambiente local, o Amazon MQ Event Source Mapping não existe como 
+9. No ambiente local, o Amazon MQ Event Source Mapping não existe como 
 serviço AWS real. Por isso, utilizamos o projeto `RabbitMqLambdaBridge`
 para simular esse comportamento.
 

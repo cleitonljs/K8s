@@ -89,11 +89,19 @@ services:
       RabbitMQ__Password: guest
       RabbitMQ__Queues__FCG_User: FCG-queue-user
 
+      # Item 4, Fase 3 — persistência poliglota e cache
+      MongoSettings__ConnectionString: "mongodb://root:root123@mongo:27017"
+      MongoSettings__Database: fcg_users
+      MongoSettings__ProfilesCollection: user_profiles
+      ConnectionStrings__Redis: "redis:6379"
+
     ports:
       - "8010:8080"
 
     depends_on:
       - mysql
+      - mongo
+      - redis
 
     networks:
       - app-network
@@ -198,6 +206,17 @@ services:
       RabbitMQ__Queues__FCG_Catalog: FGC-queue-catalog
       RabbitMQ__Queues__FCG_Payment: FGC-queue-payment
       RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
+
+      # Item 4, Fase 3 — persistência poliglota e cache
+      MongoSettings__ConnectionString: "mongodb://root:root123@mongo:27017"
+      MongoSettings__Database: fcg_payments
+      MongoSettings__AuditLogsCollection: payment_audit_logs
+      ConnectionStrings__Redis: "redis:6379"
+
+    depends_on:
+      - mysql
+      - mongo
+      - redis
 
     networks:
       - app-network

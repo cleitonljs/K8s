@@ -10,3 +10,5 @@ data:
   RabbitMQ__Port: "5672"
   RabbitMQ__Queues__FCG_User: FCG-queue-user
 
+  MongoSettings__Database: fcg_users
+  MongoSettings__ProfilesCollection: user_profiles

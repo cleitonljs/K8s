@@ -181,6 +181,8 @@ Verificar os targets do Prometheus:
 Acessar o Grafana (exposto via NodePort, mesmo padrão do Konga):
 	minikube service grafana -n fcg
 	(ou, em cluster local do Docker Desktop: http://localhost:30030)
+	se Kubernetes executar port-forward:
+	kubectl port-forward service/grafana 3099:3000 -n fcg
 	login: admin / admin123 (definida em grafana-secret.yaml)
 
 Prometheus não é exposto via NodePort/Ingress — só é alcançável dentro do cluster (o Grafana já

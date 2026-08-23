@@ -9,13 +9,13 @@ kubectl config current-context
 
 2. abrir power shell e posicionar na pasta C:\Tech-Challenge-Fase2\K8s\Kubernetes
 
-Criar namespace
+#Criar namespace
 kubectl apply -f _fcg-namespace.yaml
 
-Criar o segredo JWT compartilhado entre Users API, Catalog API e Kong:
+#Criar o segredo JWT compartilhado entre Users API, Catalog API e Kong:
 kubectl apply -f jwt-secret.yaml
 
-1. MySQL
+#1. MySQL
 kubectl apply -f mysql-configmap.yaml
 kubectl apply -f mysql-secret.yaml
 kubectl apply -f mysql-pvc.yaml
@@ -24,24 +24,26 @@ kubectl apply -f mysql-deployment.yaml
 
 kubectl rollout status deployment/mysql -n fcg --timeout=300s
 
-2. RabbitMQ
+#2. RabbitMQ
 kubectl apply -f rabbitmq-secret.yaml
 kubectl apply -f rabbitmq-service.yaml
 kubectl apply -f rabbitmq-deplyment.yaml
 
 kubectl rollout status deployment/rabbitmq -n fcg --timeout=300s
 
-3. Users API
+#3. Users API
 kubectl apply -f users-api-configmap.yaml
 kubectl apply -f users-api-secret.yaml
 kubectl apply -f users-api-service.yaml
 kubectl apply -f users-api-deployment.yaml
-4. Catalog API
+
+#4. Catalog API
 kubectl apply -f catalog-api-configmap.yaml
 kubectl apply -f catalog-api-secret.yaml
 kubectl apply -f catalog-api-service.yaml
 kubectl apply -f catalog-api-deployment.yaml
-5. Payments API
+
+#5. Payments API
 kubectl apply -f payments-api-configmap.yaml
 kubectl apply -f payments-api-secret.yaml
 kubectl apply -f payments-api-service.yaml

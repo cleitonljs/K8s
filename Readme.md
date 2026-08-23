@@ -15,12 +15,15 @@ kubectl apply -f _fcg-namespace.yaml
 #Criar o segredo JWT compartilhado entre Users API, Catalog API e Kong:
 kubectl apply -f jwt-secret.yaml
 
-#1. MySQL
+### 1. MySQL
+
+#```powershell
 kubectl apply -f mysql-configmap.yaml
 kubectl apply -f mysql-secret.yaml
 kubectl apply -f mysql-pvc.yaml
 kubectl apply -f mysql-service.yaml
 kubectl apply -f mysql-deployment.yaml
+#```
 
 kubectl rollout status deployment/mysql -n fcg --timeout=300s
 

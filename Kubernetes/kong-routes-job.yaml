@@ -25,7 +25,6 @@ spec:
             - sh
             - -c
             - |
-              until curl http://kong-admin:8001/status > /dev/null; do sleep 2; done
 
               configure() {
                 name="$1"
@@ -51,7 +50,6 @@ spec:
 
               enable_jwt() {
                 route="$1"
-                plugins="$(curl "http://kong-admin:8001/routes/${route}/plugins")"
 
                   curl --request POST "http://kong-admin:8001/routes/${route}/plugins" --data "name=jwt" --data "config.key_claim_name=iss" --data "config.claims_to_verify[]=exp" --data "config.run_on_preflight=false"
               }

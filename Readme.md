@@ -82,10 +82,13 @@ kubectl apply -f kong-service.yaml
 
 kubectl rollout status deployment/kong -n fcg --timeout=300s
 
-### 13. Cadastrar as rotas
+### 13. Cadastrar as rotas no Api Gateway
 #kubectl apply -f kong-routes-job.yaml
 
 #kubectl wait --for=condition=complete job/kong-routes -n fcg --timeout=300s
+
+#Excluir o job das rotas:
+#kubectl delete job kong-routes -n fcg
 
 ### 14. Preparar e subir o Konga
 kubectl apply -f konga-prepare-job.yaml

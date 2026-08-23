@@ -100,6 +100,7 @@ kubectl rollout status deployment/konga -n fcg --timeout=300s
 ### Fim criação Kubernetes
 
 ## Acessar o Kong Manager
+kubectl port-forward service/kong-admin 8001:8001 -n fcg
 kubectl port-forward service/kong-manager 8002:8002 -n fcg
 Acesse: http://localhost:8002
 

@@ -212,8 +212,55 @@ services:
 
     restart: unless-stopped
 
+  prometheus:
+    container_name: prometheus
+
+    image: prom/prometheus:v2.55.1
+
+    restart: always
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    ports:
+      - "9090:9090"
+
+    depends_on:
+      - catalog-api
+      - users-api
+
+    networks:
+      - app-network
+
+  grafana:
+    container_name: grafana
+
+    image: grafana/grafana:11.3.1
+
+    restart: always
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+
+    volumes:
+      - ./grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./grafana/provisioning/dashboards/dashboard-provisioning.yml:/etc/grafana/provisioning/dashboards/dashboard-provisioning.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    ports:
+      - "3001:3000"
+
+    depends_on:
+      - prometheus
+
+    networks:
+      - app-network
+
 volumes:
-  mysql_data:  
+  mysql_data:
+  prometheus_data:
 
 networks:
  app-network:

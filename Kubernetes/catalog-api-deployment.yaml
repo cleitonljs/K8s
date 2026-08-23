@@ -21,7 +21,7 @@ spec:
         - name: catalog-api
           image: catalog-api:latest
 
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8080
@@ -81,3 +81,9 @@ spec:
                 secretKeyRef:
                   name: catalog-api-secret
                   key: RabbitMQ__Password
+
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-jwt-secret
+                  key: secret-key

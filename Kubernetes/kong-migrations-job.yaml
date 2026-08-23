@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-migrations
+  namespace: fcg
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        app: kong-migrations
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:11.16
+          command:
+            - sh
+            - -c
+            - until pg_isready -h kong-database -U kong -d kong; do sleep 2; done
+      containers:
+        - name: kong-migrations
+          image: kong:3.4
+          imagePullPolicy: IfNotPresent
+          command: ["kong", "migrations", "bootstrap"]
+          envFrom:
+            - configMapRef:
+                name: kong-environment
+          env:
+            - name: KONG_PG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-user
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-password

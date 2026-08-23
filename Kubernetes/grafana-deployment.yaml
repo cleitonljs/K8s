@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-deployment
+  namespace: fcg
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: grafana
+
+  template:
+    metadata:
+      labels:
+        app: grafana
+
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.3.1
+
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 3000
+
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: GF_SECURITY_ADMIN_USER
+
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: GF_SECURITY_ADMIN_PASSWORD
+
+          volumeMounts:
+            - name: grafana-datasources-volume
+              mountPath: /etc/grafana/provisioning/datasources/datasource.yml
+              subPath: datasource.yml
+
+            - name: grafana-datasources-volume
+              mountPath: /etc/grafana/provisioning/dashboards/dashboard-provisioning.yml
+              subPath: dashboard-provisioning.yml
+
+            - name: grafana-dashboards-volume
+              mountPath: /var/lib/grafana/dashboards
+
+      volumes:
+        - name: grafana-datasources-volume
+          configMap:
+            name: grafana-datasources
+
+        - name: grafana-dashboards-volume
+          configMap:
+            name: grafana-dashboards-json

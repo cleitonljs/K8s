@@ -1,0 +1,303 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-json
+  namespace: fcg
+data:
+  overview.json: |
+    {
+      "uid": "fcg-api-overview",
+      "title": "API — Visão Geral",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "job",
+            "type": "custom",
+            "label": "API",
+            "query": "catalog-api, users-api",
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "id": 1, "type": "stat", "title": "Requests/sec", "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(rate(http_server_request_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+        { "id": 2, "type": "stat", "title": "P95 (s)", "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A" } ] },
+        { "id": 3, "type": "stat", "title": "P99 (s)", "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A" } ] },
+        { "id": 4, "type": "stat", "title": "Taxa de erro", "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "targets": [ { "expr": "sum(rate(http_server_request_duration_seconds_count{job=~\"$job\", http_response_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_request_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+        { "id": 5, "type": "stat", "title": "Requests em andamento", "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(http_server_active_requests{job=~\"$job\"})", "refId": "A" } ] },
+    
+        { "id": 10, "type": "timeseries", "title": "Requests/sec por API", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum by (job) (rate(http_server_request_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}}" } ] },
+        { "id": 11, "type": "timeseries", "title": "Latência P50 / P95 / P99", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A", "legendFormat": "P50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "B", "legendFormat": "P95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "C", "legendFormat": "P99" }
+          ] },
+    
+        { "id": 12, "type": "timeseries", "title": "Taxa de erro", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "targets": [ { "expr": "sum(rate(http_server_request_duration_seconds_count{job=~\"$job\", http_response_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_request_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "5xx" } ] },
+        { "id": 13, "type": "timeseries", "title": "HTTP 2xx / 4xx / 5xx (req/s)", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum(rate(http_server_request_duration_seconds_count{job=~\"$job\", http_response_status_code=~\"2..\"}[$__rate_interval]))", "refId": "A", "legendFormat": "2xx" },
+            { "expr": "sum(rate(http_server_request_duration_seconds_count{job=~\"$job\", http_response_status_code=~\"4..\"}[$__rate_interval]))", "refId": "B", "legendFormat": "4xx" },
+            { "expr": "sum(rate(http_server_request_duration_seconds_count{job=~\"$job\", http_response_status_code=~\"5..\"}[$__rate_interval]))", "refId": "C", "legendFormat": "5xx" }
+          ] },
+    
+        { "id": 14, "type": "timeseries", "title": "Requests por minuto", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum by (job) (increase(http_server_request_duration_seconds_count{job=~\"$job\"}[1m]))", "refId": "A", "legendFormat": "{{job}}" } ] },
+        { "id": 15, "type": "timeseries", "title": "Requests em andamento", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum by (job) (http_server_active_requests{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}}" } ] }
+      ]
+    }
+  endpoints.json: |
+    {
+      "uid": "fcg-api-endpoints",
+      "title": "API — Endpoints",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "job",
+            "type": "custom",
+            "label": "API",
+            "query": "catalog-api, users-api",
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "method",
+            "type": "query",
+            "label": "Método HTTP",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": { "query": "label_values(http_server_request_duration_seconds_count{job=~\"$job\"}, http_request_method)", "refId": "method" },
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "route",
+            "type": "query",
+            "label": "Endpoint",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": { "query": "label_values(http_server_request_duration_seconds_count{job=~\"$job\"}, http_route)", "refId": "route" },
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "status",
+            "type": "query",
+            "label": "Status HTTP",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": { "query": "label_values(http_server_request_duration_seconds_count{job=~\"$job\"}, http_response_status_code)", "refId": "status" },
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "id": 1, "type": "table", "title": "Top endpoints por volume", "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "topk(10, sum by (job, http_route) (rate(http_server_request_duration_seconds_count{job=~\"$job\", http_request_method=~\"$method\", http_route=~\"$route\", http_response_status_code=~\"$status\"}[$__rate_interval])))", "format": "table", "instant": true, "refId": "A" } ] },
+        { "id": 2, "type": "table", "title": "Top endpoints mais lentos (P95)", "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [ { "expr": "topk(10, histogram_quantile(0.95, sum by (le, job, http_route) (rate(http_server_request_duration_seconds_bucket{job=~\"$job\", http_request_method=~\"$method\", http_route=~\"$route\"}[$__rate_interval]))))", "format": "table", "instant": true, "refId": "A" } ] },
+    
+        { "id": 3, "type": "table", "title": "Top endpoints com erro (4xx/5xx)", "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "topk(10, sum by (job, http_route) (rate(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"4..|5..\"}[$__rate_interval])))", "format": "table", "instant": true, "refId": "A" } ] },
+        { "id": 4, "type": "timeseries", "title": "Latência por endpoint (P95)", "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [ { "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job=~\"$job\", http_request_method=~\"$method\", http_route=~\"$route\"}[$__rate_interval])))", "refId": "A", "legendFormat": "{{http_route}}" } ] },
+    
+        { "id": 5, "type": "timeseries", "title": "Latência por endpoint (P50 / P95 / P99)", "gridPos": { "h": 9, "w": 12, "x": 0, "y": 18 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job=~\"$job\", http_route=~\"$route\"}[$__rate_interval])))", "refId": "A", "legendFormat": "P50 {{http_route}}" },
+            { "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job=~\"$job\", http_route=~\"$route\"}[$__rate_interval])))", "refId": "B", "legendFormat": "P95 {{http_route}}" },
+            { "expr": "histogram_quantile(0.99, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job=~\"$job\", http_route=~\"$route\"}[$__rate_interval])))", "refId": "C", "legendFormat": "P99 {{http_route}}" }
+          ] },
+        { "id": 6, "type": "timeseries", "title": "Erros por endpoint (4xx / 5xx)", "gridPos": { "h": 9, "w": 12, "x": 12, "y": 18 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"4..\"}[$__rate_interval]))", "refId": "A", "legendFormat": "4xx {{http_route}}" },
+            { "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[$__rate_interval]))", "refId": "B", "legendFormat": "5xx {{http_route}}" }
+          ] }
+      ]
+    }
+  runtime.json: |
+    {
+      "uid": "fcg-api-runtime",
+      "title": "API — Runtime / Infraestrutura",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "job",
+            "type": "custom",
+            "label": "API",
+            "query": "catalog-api, users-api",
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "id": 1, "type": "stat", "title": "CPU", "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+          "targets": [ { "expr": "sum(rate(process_cpu_time_seconds_total{job=~\"$job\"}[$__rate_interval])) * 100", "refId": "A" } ] },
+        { "id": 2, "type": "stat", "title": "Memória (Working Set)", "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [ { "expr": "sum(process_memory_usage_bytes{job=~\"$job\"})", "refId": "A" } ] },
+        { "id": 3, "type": "stat", "title": "Threads", "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(process_runtime_dotnet_thread_pool_threads_count{job=~\"$job\"})", "refId": "A" } ] },
+        { "id": 4, "type": "stat", "title": "GC Gen 2 (total)", "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(process_runtime_dotnet_gc_collections_count_total{job=~\"$job\", generation=\"gen2\"})", "refId": "A" } ] },
+        { "id": 5, "type": "stat", "title": "Exceptions/s", "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(rate(process_runtime_dotnet_exceptions_count_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+    
+        { "id": 10, "type": "timeseries", "title": "CPU %", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+          "targets": [ { "expr": "sum by (job, cpu_mode) (rate(process_cpu_time_seconds_total{job=~\"$job\"}[$__rate_interval])) * 100", "refId": "A", "legendFormat": "{{job}} - {{cpu_mode}}" } ] },
+        { "id": 11, "type": "timeseries", "title": "Memória: Working Set / Heap / Alocações", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            { "expr": "sum by (job) (process_memory_usage_bytes{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}} - working set" },
+            { "expr": "sum by (job) (process_runtime_dotnet_gc_objects_size_bytes{job=~\"$job\"})", "refId": "B", "legendFormat": "{{job}} - heap" },
+            { "expr": "sum by (job) (rate(process_runtime_dotnet_gc_allocations_size_bytes_total{job=~\"$job\"}[$__rate_interval]))", "refId": "C", "legendFormat": "{{job}} - allocations/s" }
+          ] },
+    
+        { "id": 12, "type": "timeseries", "title": "Garbage Collector: coleções por geração", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum by (job, generation) (rate(process_runtime_dotnet_gc_collections_count_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}} - {{generation}}" }
+          ] },
+        { "id": 13, "type": "timeseries", "title": "GC: tempo gasto (ms)", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+          "targets": [ { "expr": "sum by (job) (rate(process_runtime_dotnet_gc_duration_nanoseconds_total{job=~\"$job\"}[$__rate_interval])) / 1e6", "refId": "A", "legendFormat": "{{job}}" } ] },
+    
+        { "id": 14, "type": "timeseries", "title": "ThreadPool: threads e fila", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum by (job) (process_runtime_dotnet_thread_pool_threads_count{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}} - threads" },
+            { "expr": "sum by (job) (process_runtime_dotnet_thread_pool_queue_length{job=~\"$job\"})", "refId": "B", "legendFormat": "{{job}} - queue length" }
+          ] },
+        { "id": 15, "type": "timeseries", "title": "Exceptions/s", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum by (job) (rate(process_runtime_dotnet_exceptions_count_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}}" } ] }
+      ]
+    }
+  database.json: |
+    {
+      "uid": "fcg-api-database",
+      "title": "Banco de Dados (MySQL)",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "job",
+            "type": "custom",
+            "label": "API",
+            "query": "catalog-api, users-api",
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "id": 1, "type": "stat", "title": "Queries/s", "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(rate(db_query_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+        { "id": 2, "type": "stat", "title": "DB P95", "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [ { "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A" } ] },
+        { "id": 3, "type": "stat", "title": "Conexões (ativas)", "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(db_connections_active{job=~\"$job\"})", "refId": "A" } ] },
+        { "id": 4, "type": "stat", "title": "DB Errors/s", "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum(rate(db_query_errors_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A" } ] },
+    
+        { "id": 10, "type": "timeseries", "title": "Queries/s", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum by (job) (rate(db_query_duration_seconds_count{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}}" } ] },
+        { "id": 11, "type": "timeseries", "title": "Duração das queries: P50 / P95 / P99", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "A", "legendFormat": "P50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "B", "legendFormat": "P95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])) by (le))", "refId": "C", "legendFormat": "P99" }
+          ] },
+    
+        { "id": 12, "type": "timeseries", "title": "Conexões: ativas vs. máximo do pool", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum by (job) (db_connections_active{job=~\"$job\"})", "refId": "A", "legendFormat": "{{job}} - ativas" },
+            { "expr": "sum by (job) (db_connections_max{job=~\"$job\"})", "refId": "B", "legendFormat": "{{job}} - máximo" }
+          ] },
+        { "id": 13, "type": "timeseries", "title": "Erros de banco de dados", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [ { "expr": "sum by (job, operation, error_type) (rate(db_query_errors_total{job=~\"$job\"}[$__rate_interval]))", "refId": "A", "legendFormat": "{{job}} - {{operation}} ({{error_type}})" } ] },
+    
+        { "id": 14, "type": "table", "title": "Operações mais lentas (P95)", "gridPos": { "h": 9, "w": 24, "x": 0, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [ { "expr": "topk(15, histogram_quantile(0.95, sum by (le, job, operation, entity) (rate(db_query_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval]))))", "format": "table", "instant": true, "refId": "A" } ] }
+      ]
+    }

@@ -21,7 +21,7 @@ spec:
         - name: users-api
           image: users-api:latest
 
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8080
@@ -75,3 +75,9 @@ spec:
                 secretKeyRef:
                   name: users-api-secret
                   key: RabbitMQ__Password
+
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: fcg-jwt-secret
+                  key: secret-key

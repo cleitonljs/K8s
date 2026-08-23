@@ -1,14 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: notifications-api
+  name: prometheus
   namespace: fcg
-
 spec:
   selector:
-    app: notifications-api
-
+    app: prometheus
   ports:
-    - port: 80
-      targetPort: 8080
+    - port: 9090
+      targetPort: 9090
   type: ClusterIP

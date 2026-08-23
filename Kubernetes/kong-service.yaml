@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  namespace: fcg
+spec:
+  selector:
+    app: kong
+  ports:
+    - name: proxy
+      port: 8000
+      targetPort: proxy
+      nodePort: 30080
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-admin
+  namespace: fcg
+spec:
+  selector:
+    app: kong
+  ports:
+    - name: admin
+      port: 8001
+      targetPort: admin
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-manager
+  namespace: fcg
+spec:
+  selector:
+    app: kong
+  ports:
+    - name: manager
+      port: 8002
+      targetPort: manager
+  type: ClusterIP

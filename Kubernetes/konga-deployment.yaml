@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konga
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: konga
+  template:
+    metadata:
+      labels:
+        app: konga
+    spec:
+      containers:
+        - name: konga
+          image: pantsel/konga:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: konga-token-secret
+            - name: DB_ADAPTER
+              value: postgres
+            - name: DB_HOST
+              value: kong-database
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: konga-database
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-secret
+                  key: postgres-password
+            - name: NODE_ENV
+              value: production
+          ports:
+            - name: http
+              containerPort: 1337
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10

@@ -34,6 +34,12 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
     networks:
       - app-network
 
@@ -65,42 +71,42 @@ services:
     networks:
       - app-network
   
-  notifications-api:
-    container_name: notifications-api
+  # notifications-api:
+  #   container_name: notifications-api
       
-    build: 
-      context: ../../NotificationsAPI
-      dockerfile: Dockerfile
+  #   build: 
+  #     context: ../../NotificationsAPI
+  #     dockerfile: Dockerfile
       
-    image: notifications-api:latest
+  #   image: notifications-api:latest
 
-    restart: always
+  #   restart: always
 
-    environment:
-      ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
+  #   environment:
+  #     ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
       
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__Port: 5672
-      RabbitMQ__Username: guest
-      RabbitMQ__Password: guest
+  #     RabbitMQ__Host: rabbitmq
+  #     RabbitMQ__Port: 5672
+  #     RabbitMQ__Username: guest
+  #     RabbitMQ__Password: guest
       
-      RabbitMQ__Queues__FCG_User: FCG-queue-user      
-      RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
+  #     RabbitMQ__Queues__FCG_User: FCG-queue-user      
+  #     RabbitMQ__Queues__FCG_Notification: FGC-queue-notification
       
-      API_Users__URL: http://users-api:8080
-      API_Users__Email: admin@email.com
-      API_Users__Senha: 1234@Abc
+  #     API_Users__URL: http://users-api:8080
+  #     API_Users__Email: admin@email.com
+  #     API_Users__Senha: 1234@Abc
       
-      URL_API_Catalog: http://catalog-api:8080 
+  #     URL_API_Catalog: http://catalog-api:8080 
 
-    ports:
-      - "8020:8080"
+  #   ports:
+  #     - "8020:8080"
 
-    networks:
-      - app-network
+  #   networks:
+  #     - app-network
 
-    depends_on:
-      - rabbitmq
+  #   depends_on:
+  #     - rabbitmq
 
   catalog-api:
     container_name: catalog-api
@@ -160,6 +166,51 @@ services:
 
     networks:
       - app-network
+  localstack:
+    container_name: localstack
+    image: localstack/localstack-pro:latest
+
+    ports:
+      - "4566:4566"
+
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      - SERVICES=lambda,sqs,iam,logs
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+
+    volumes:
+      - "./localstack:/var/lib/localstack"
+      - "./localstack/init/ready.d:/etc/localstack/init/ready.d"
+      - "./localstack/lambdas/NotificationsLambda.zip:/lambda/NotificationsLambda.zip:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+    networks:
+      - app-network
+
+  rabbitmq-lambda-bridge:
+    container_name: rabbitmq-lambda-bridge
+
+    build:
+      context: ../../RabbitMqLambdaBridge
+      dockerfile: Dockerfile
+
+    image: rabbitmq-lambda-bridge:latest
+
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      LOCALSTACK_URL: http://localstack:4566
+
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+    networks:
+      - app-network
+
+    restart: unless-stopped
 
   prometheus:
     container_name: prometheus
@@ -214,3 +265,4 @@ volumes:
 networks:
  app-network:
    driver: bridge
+

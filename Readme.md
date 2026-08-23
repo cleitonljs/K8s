@@ -102,6 +102,12 @@ kubectl rollout status deployment/konga -n fcg --timeout=300s
 
 ### Fim criação Kubernetes
 
+## Executar migrations:
+kubectl port-forward service/mysql 3306:3306 -n fcg
+cd C:\Tech-Challenge-Fase2\CatalogAPI
+dotnet ef migrations add InitialCatalog --project .\Infrastructure\Infrastructure.csproj --startup-project .\CatalogAPI\CatalogAPI.csproj
+dotnet ef database update --project .\Infrastructure\Infrastructure.csproj --startup-project .\CatalogAPI\CatalogAPI.csproj
+
 ## Acessar o Kong Manager
 kubectl port-forward service/kong-admin 8001:8001 -n fcg
 kubectl port-forward service/kong-manager 8002:8002 -n fcg

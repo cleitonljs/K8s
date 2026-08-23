@@ -82,23 +82,8 @@ kubectl apply -f kong-service.yaml
 
 kubectl rollout status deployment/kong -n fcg --timeout=300s
 
-### 13. Cadastrar as rotas no Api Gateway
-#kubectl apply -f kong-routes-job.yaml
-
-#kubectl wait --for=condition=complete job/kong-routes -n fcg --timeout=300s
-
 #Excluir o job das rotas:
 #kubectl delete job kong-routes -n fcg
-
-### 14. Preparar e subir o Konga
-kubectl apply -f konga-prepare-job.yaml
-
-kubectl wait --for=condition=complete job/konga-prepare -n fcg --timeout=300s
-
-kubectl apply -f konga-deployment.yaml
-kubectl apply -f konga-service.yaml
-
-kubectl rollout status deployment/konga -n fcg --timeout=300s
 
 ### Fim criação Kubernetes
 
@@ -107,6 +92,9 @@ kubectl port-forward service/mysql 3306:3306 -n fcg
 cd C:\Tech-Challenge-Fase2\CatalogAPI
 dotnet ef migrations add InitialCatalog --project .\Infrastructure\Infrastructure.csproj --startup-project .\CatalogAPI\CatalogAPI.csproj
 dotnet ef database update --project .\Infrastructure\Infrastructure.csproj --startup-project .\CatalogAPI\CatalogAPI.csproj
+
+## Cadastrar as rotas no Api Gateway
+#kubectl apply -f kong-routes-job.yaml
 
 ## Acessar o Kong Manager
 kubectl port-forward service/kong-admin 8001:8001 -n fcg

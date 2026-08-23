@@ -1,21 +1,22 @@
 # Tech-Challenge - Fase 3
 
-segue abaixo passo a passo para levantar o Kubernetes utilizando o Kubernetes do Docker desktop.
+## Segue abaixo passo a passo para instalar a aplicação FCG no Kubernetes utilizando o Kubernetes do Docker desktop.
 
-1. limpar o Kubernetes no Docker-desktop
-
-verificar se está habilitado o Kubernetes do Docker desktop:
+1. verificar se está habilitado o Kubernetes do Docker desktop:
 kubectl config current-context
 
-2. abrir power shell e posicionar na pasta C:\Tech-Challenge-Fase2\K8s\Kubernetes
+2. Limpar o namespace do fcg no Kubernetes no Docker-desktop:
+kubectl delete namespace fcg
 
-#Criar namespace
+3. Abrir power shell e posicionar na pasta C:\Tech-Challenge-Fase2\K8s\Kubernetes
+
+### 1. Criar namespace
 kubectl apply -f _fcg-namespace.yaml
 
-#Criar o segredo JWT compartilhado entre Users API, Catalog API e Kong:
+### 2. Criar o segredo JWT compartilhado entre Users API, Catalog API e Kong:
 kubectl apply -f jwt-secret.yaml
 
-### 1. MySQL
+### 3. MySQL
 kubectl apply -f mysql-configmap.yaml
 kubectl apply -f mysql-secret.yaml
 kubectl apply -f mysql-pvc.yaml
@@ -24,43 +25,44 @@ kubectl apply -f mysql-deployment.yaml
 
 kubectl rollout status deployment/mysql -n fcg --timeout=300s
 
-#2. RabbitMQ
+### 4. RabbitMQ
 kubectl apply -f rabbitmq-secret.yaml
 kubectl apply -f rabbitmq-service.yaml
 kubectl apply -f rabbitmq-deplyment.yaml
 
 kubectl rollout status deployment/rabbitmq -n fcg --timeout=300s
 
-#3. Users API
+### 5. Users API
 kubectl apply -f users-api-configmap.yaml
 kubectl apply -f users-api-secret.yaml
 kubectl apply -f users-api-service.yaml
 kubectl apply -f users-api-deployment.yaml
 
-#4. Catalog API
+### 6. Catalog API
 kubectl apply -f catalog-api-configmap.yaml
 kubectl apply -f catalog-api-secret.yaml
 kubectl apply -f catalog-api-service.yaml
 kubectl apply -f catalog-api-deployment.yaml
 
-#5. Payments API
+### 7. Payments API
 kubectl apply -f payments-api-configmap.yaml
 kubectl apply -f payments-api-secret.yaml
 kubectl apply -f payments-api-service.yaml
 kubectl apply -f payments-api-deployment.yaml
-6. Notifications API
+
+### 8. Notifications API
 kubectl apply -f notifications-api-configmap.yaml
 kubectl apply -f notifications-api-secret.yaml
 kubectl apply -f notifications-api-service.yaml
 kubectl apply -f notifications-api-deployment.yaml
-Aguarde todas as APIs:
+
+### 9. Aguarde todas as APIs:
 kubectl rollout status deployment/users-api-deployment -n fcg --timeout=300s
 kubectl rollout status deployment/catalog-api-deployment -n fcg --timeout=300s
 kubectl rollout status deployment/payments-api -n fcg --timeout=300s
 kubectl rollout status deployment/notifications-api -n fcg --timeout=300s
-Confira:
-kubectl get pods -n fcg
-7. PostgreSQL do Kong
+
+### 10. PostgreSQL do Kong
 kubectl apply -f kong-secret.yaml
 kubectl apply -f kong-environment-configmap.yaml
 kubectl apply -f kong-postgres-init-configmap.yaml
@@ -70,69 +72,48 @@ kubectl apply -f kong-postgres-deployment.yaml
 
 kubectl rollout status deployment/kong-database -n fcg --timeout=300s
 
-8. Migrations do Kong
+### 11. Migrations do Kong
 kubectl apply -f kong-migrations-job.yaml
+kubectl wait --for=condition=complete job/kong-migrations -n fcg --timeout=300s
 
-kubectl wait --for=condition=complete job/kong-migrations `
-  -n fcg `
-  --timeout=300s
-Confira os logs:
-kubectl logs job/kong-migrations -n fcg
-
-9. Kong Gateway e Kong Manager
+### 12. Kong Gateway e Kong Manager
 kubectl apply -f kong-deployment.yaml
 kubectl apply -f kong-service.yaml
 
 kubectl rollout status deployment/kong -n fcg --timeout=300s
 
-10. Cadastrar as rotas
-kubectl apply -f kong-routes-job.yaml
+### 13. Cadastrar as rotas
+#kubectl apply -f kong-routes-job.yaml
 
-kubectl wait --for=condition=complete job/kong-routes `
-  -n fcg `
-  --timeout=300s
-Confira:
-kubectl logs job/kong-routes -n fcg
+#kubectl wait --for=condition=complete job/kong-routes -n fcg --timeout=300s
 
-O job cria as rotas publicas de login e cadastro, cadastra a credencial HS256
-e ativa a validacao JWT nas rotas gerais de Users API e Catalog API.
-
-11. Preparar e subir o Konga
+### 14. Preparar e subir o Konga
 kubectl apply -f konga-prepare-job.yaml
 
-kubectl wait --for=condition=complete job/konga-prepare `
-  -n fcg `
-  --timeout=300s
+kubectl wait --for=condition=complete job/konga-prepare -n fcg --timeout=300s
 
 kubectl apply -f konga-deployment.yaml
 kubectl apply -f konga-service.yaml
 
 kubectl rollout status deployment/konga -n fcg --timeout=300s
 
-12. Verificação final
-kubectl get pods,services,jobs,pvc -n fcg
-Os Deployments devem estar Running, os Jobs devem estar Completed e os PVCs devem estar Bound.
+### Fim criação Kubernetes
 
-13. Acessar o Kong Manager
-Abra um terminal e mantenha-o aberto:
+## Acessar o Kong Manager
 kubectl port-forward service/kong-manager 8002:8002 -n fcg
-Abra outro terminal:
-kubectl port-forward service/kong-admin 8001:8001 -n fcg
-Acesse:
-http://localhost:8002
+Acesse: http://localhost:8002
 
-14. Acessar as APIs pelo gateway
-Em outro terminal:
+## Expor o Kong API Gateway
 kubectl port-forward service/kong 8080:8000 -n fcg
 
-Teste:
-curl.exe -i http://localhost:8080/payments/api/health
-curl.exe -i http://localhost:8080/notifications/api/health
+## Testes:
+http://localhost:8080/payments/api/health
+http://localhost:8080/notifications/api/health
 
-Faça login para obter o token JWT (usuário admin padrão).
+## Faça login para obter o token JWT (usuário admin padrão).
 curl.exe -i http://localhost:8080/users/login -H "Content-Type: application/json" --% -d "{\"Email\":\"admin@email.com\",\"Senha\":\"1234@Abc\"}"
 
-Copie o valor de "token" do retorno acima e use-o para testar a validação JWT do Kong nas rotas protegidas de Users API e Catalog API:
+## Copie o valor de "token" do retorno acima e use-o para testar a validação JWT do Kong nas rotas protegidas de Users API e Catalog API:
 curl.exe -i http://localhost:8080/users/usuario/todos -H "Authorization: Bearer <TOKEN>"
 curl.exe -i http://localhost:8080/catalog/game/todos -H "Authorization: Bearer <TOKEN>"
 

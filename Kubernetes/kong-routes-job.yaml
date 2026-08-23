@@ -23,24 +23,18 @@ spec:
                   key: secret-key
           command:
             - sh
-            - -ec
+            - -c
             - |
-              until curl --fail --silent http://kong-admin:8001/status > /dev/null; do sleep 2; done
+              until curl http://kong-admin:8001/status > /dev/null; do sleep 2; done
 
               configure() {
                 name="$1"
                 upstream="$2"
                 path="$3"
 
-                curl --fail --silent --show-error --request PUT \
-                  "http://kong-admin:8001/services/${name}" \
-                  --data "url=${upstream}"
+                curl --request PUT "http://kong-admin:8001/services/${name}" --data "url=${upstream}"
 
-                curl --fail --silent --show-error --request PUT \
-                  "http://kong-admin:8001/routes/${name}-route" \
-                  --data "service.name=${name}" \
-                  --data "paths[]=${path}" \
-                  --data "strip_path=true"
+                curl --request PUT "http://kong-admin:8001/routes/${name}-route" --data "service.name=${name}" --data "paths[]=${path}" --data "strip_path=true"
               }
 
               configure users-api http://users-api:80 /users
@@ -48,39 +42,18 @@ spec:
               configure payments-api http://payments-api:80 /payments
               configure notifications-api http://notifications-api:80 /notifications
 
-              # Rotas publicas, mais especificas que a rota protegida /users.
-              # O path no Service preserva o endpoint apos o strip_path do Kong.
               configure users-login http://users-api:80/login /users/login
               configure users-create http://users-api:80/usuario/criar /users/usuario/criar
 
-              curl --fail --silent --show-error --request PUT \
-                "http://kong-admin:8001/consumers/fcg-api" \
-                --data "username=fcg-api"
+              curl --request PUT "http://kong-admin:8001/consumers/fcg-api" --data "username=fcg-api"
 
-              jwt_credentials="$(curl --fail --silent --show-error \
-                "http://kong-admin:8001/consumers/fcg-api/jwt")"
-
-              if ! printf '%s' "$jwt_credentials" | grep --quiet '"key":"FCG-API"'; then
-                curl --fail --silent --show-error --request POST \
-                  "http://kong-admin:8001/consumers/fcg-api/jwt" \
-                  --data "key=FCG-API" \
-                  --data "secret=${JWT_SECRET}" \
-                  --data "algorithm=HS256"
-              fi
+              curl --request POST "http://kong-admin:8001/consumers/fcg-api/jwt" --data "key=FCG-API" --data "secret=${JWT_SECRET}" --data "algorithm=HS256"
 
               enable_jwt() {
                 route="$1"
-                plugins="$(curl --fail --silent --show-error \
-                  "http://kong-admin:8001/routes/${route}/plugins")"
+                plugins="$(curl "http://kong-admin:8001/routes/${route}/plugins")"
 
-                if ! printf '%s' "$plugins" | grep --quiet '"name":"jwt"'; then
-                  curl --fail --silent --show-error --request POST \
-                    "http://kong-admin:8001/routes/${route}/plugins" \
-                    --data "name=jwt" \
-                    --data "config.key_claim_name=iss" \
-                    --data "config.claims_to_verify[]=exp" \
-                    --data "config.run_on_preflight=false"
-                fi
+                  curl --request POST "http://kong-admin:8001/routes/${route}/plugins" --data "name=jwt" --data "config.key_claim_name=iss" --data "config.claims_to_verify[]=exp" --data "config.run_on_preflight=false"
               }
 
               enable_jwt users-api-route

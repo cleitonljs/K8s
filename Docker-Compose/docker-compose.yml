@@ -34,6 +34,12 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
     networks:
       - app-network
 
@@ -115,7 +121,7 @@ services:
 
     image: notifications-api:latest
 
-    restart: always
+  #   restart: always
 
     environment:
       ConnectionStrings__DefaultConnection: "server=mysql;port=3306;database=fcgdb;user=root;password=root123"
@@ -134,14 +140,14 @@ services:
 
       URL_API_Catalog: http://catalog-api:8080
 
-    ports:
-      - "8020:8080"
+  #   ports:
+  #     - "8020:8080"
 
-    networks:
-      - app-network
+  #   networks:
+  #     - app-network
 
-    depends_on:
-      - rabbitmq
+  #   depends_on:
+  #     - rabbitmq
 
   catalog-api:
     container_name: catalog-api
@@ -220,11 +226,104 @@ services:
 
     networks:
       - app-network
+  localstack:
+    container_name: localstack
+    image: localstack/localstack-pro:latest
+
+    ports:
+      - "4566:4566"
+
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      - SERVICES=lambda,sqs,iam,logs
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+
+    volumes:
+      - "./localstack:/var/lib/localstack"
+      - "./localstack/init/ready.d:/etc/localstack/init/ready.d"
+      - "./localstack/lambdas/NotificationsLambda.zip:/lambda/NotificationsLambda.zip:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+    networks:
+      - app-network
+
+  rabbitmq-lambda-bridge:
+    container_name: rabbitmq-lambda-bridge
+
+    build:
+      context: ../../RabbitMqLambdaBridge
+      dockerfile: Dockerfile
+
+    image: rabbitmq-lambda-bridge:latest
+
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      LOCALSTACK_URL: http://localstack:4566
+
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+    networks:
+      - app-network
+
+    restart: unless-stopped
+
+  prometheus:
+    container_name: prometheus
+
+    image: prom/prometheus:v2.55.1
+
+    restart: always
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    ports:
+      - "9090:9090"
+
+    depends_on:
+      - catalog-api
+      - users-api
+
+    networks:
+      - app-network
+
+  grafana:
+    container_name: grafana
+
+    image: grafana/grafana:11.3.1
+
+    restart: always
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+
+    volumes:
+      - ./grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./grafana/provisioning/dashboards/dashboard-provisioning.yml:/etc/grafana/provisioning/dashboards/dashboard-provisioning.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    ports:
+      - "3001:3000"
+
+    depends_on:
+      - prometheus
+
+    networks:
+      - app-network
 
 volumes:
   mysql_data:
+  prometheus_data:
   mongo_data:
 
 networks:
  app-network:
    driver: bridge
+

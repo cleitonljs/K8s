@@ -53,7 +53,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: payments-api-config
-                  key: RabbitMQ__Queues__FCG_Payment            
+                  key: RabbitMQ__Queues__FCG_Payment
 
             - name: RabbitMQ__Queues__FCG_Catalog
               valueFrom:
@@ -66,6 +66,18 @@ spec:
                 configMapKeyRef:
                   name: notifications-api-config
                   key: RabbitMQ__Queues__FCG_Notification
+
+            - name: MongoSettings__Database
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-api-config
+                  key: MongoSettings__Database
+
+            - name: MongoSettings__AuditLogsCollection
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-api-config
+                  key: MongoSettings__AuditLogsCollection
 
             # =========================================
             # SECRET
@@ -87,3 +99,15 @@ spec:
                 secretKeyRef:
                   name: payments-api-secret
                   key: RabbitMQ__Password
+
+            - name: MongoSettings__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: payments-api-secret
+                  key: MongoSettings__ConnectionString
+
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                secretKeyRef:
+                  name: payments-api-secret
+                  key: ConnectionStrings__Redis

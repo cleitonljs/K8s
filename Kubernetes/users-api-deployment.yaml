@@ -53,7 +53,19 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: users-api-configmap
-                  key: RabbitMQ__Queues__FCG_User            
+                  key: RabbitMQ__Queues__FCG_User
+
+            - name: MongoSettings__Database
+              valueFrom:
+                configMapKeyRef:
+                  name: users-api-configmap
+                  key: MongoSettings__Database
+
+            - name: MongoSettings__ProfilesCollection
+              valueFrom:
+                configMapKeyRef:
+                  name: users-api-configmap
+                  key: MongoSettings__ProfilesCollection
 
             # =========================================
             # SECRET
@@ -81,3 +93,15 @@ spec:
                 secretKeyRef:
                   name: fcg-jwt-secret
                   key: secret-key
+
+            - name: MongoSettings__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: users-api-secret
+                  key: MongoSettings__ConnectionString
+
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                secretKeyRef:
+                  name: users-api-secret
+                  key: ConnectionStrings__Redis

@@ -1,6 +1,6 @@
-# Manual de teste — Item 4, Fase 3 (Persistência poliglota + Cache)
+# 4. Persistência Poliglota e Alta Performance
 
-Guia para qualquer integrante do grupo testar, do zero, o que foi implementado no
+Guia para o que foi implementado no
 item 4 da Fase 3: **MongoDB** para dado de schema flexível/alto volume e **Redis**
 como cache distribuído, agora nos três serviços (`UsersAPI`, `CatalogAPI`,
 `PaymentsAPI`), além da orquestração (`K8s`).
@@ -12,14 +12,7 @@ como cache distribuído, agora nos três serviços (`UsersAPI`, `CatalogAPI`,
 
 		dotnet tool install --global dotnet-ef
 
-## 2. Buscar e trocar de branch (nos 4 repositórios)
-
-Em `UsersAPI`, `PaymentsAPI`, `CatalogAPI` e `K8s`:
-
-	git fetch origin
-	git checkout implementacao-persistencia-poliglota-e-cache
-
-## 3. Subir o ambiente completo
+## 2. Subir o ambiente completo
 
 A partir da pasta `K8s/Docker-Compose`:
 
@@ -58,7 +51,7 @@ Confirme:
 Deve listar `Users`, `Games`, `Library` e `__EFMigrationsHistory`. **Não dê `git add`
 na pasta `Migrations/` que isso gera** — ela fica só local, fora do repositório.
 
-## 4. Seed básico
+## 3. Login e criação de usuário
 
 Login do Admin já existe (`admin@email.com` / `1234@Abc`):
 
@@ -76,9 +69,9 @@ Crie um usuário comum e pegue o token dele também (`<USER_TOKEN>`):
 Anote o `id` do jogo criado (normalmente `1`, `<GAME_ID>` daqui pra frente) e o `id`
 do usuário comum (normalmente `2`).
 
-## 5. Roteiro de teste por funcionalidade
+## 4. Roteiro de teste por funcionalidade
 
-### 5.1 Perfil estendido de usuário (UsersAPI) — MongoDB + cache
+### 4.1 Perfil estendido de usuário (UsersAPI) — MongoDB + cache
 
 Criar/atualizar o próprio perfil (usuário comum, id 2):
 
@@ -97,11 +90,20 @@ Confirmar persistência no MongoDB:
 
 	docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_users').user_profiles.find().toArray()"
 
-(Opcional) Confirmar o cache: chame `GET usuario/2/perfil` duas vezes — a 2ª deve
+	Limpar documentos:
+		docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_users').user_profiles.deleteMany({})"
+
+Confirmar persistência no redis:
+
+	docker exec -it redis redis-cli
+	keys *
+	flushall
+
+Confirmar o cache: chame `GET usuario/2/perfil` duas vezes — a 2ª deve
 ser bem mais rápida (TTL de 10 min), e aparece uma chave `users-api:users:perfil:2`
 em `docker exec redis redis-cli KEYS "*"`.
 
-### 5.2 Auditoria de pagamento (PaymentsAPI) — MongoDB
+### 4.2 Auditoria de pagamento (PaymentsAPI) — MongoDB
 
 Fluxo de compra ponta a ponta (CatalogAPI → RabbitMQ → PaymentsAPI → volta pro
 Catalog):
@@ -121,7 +123,7 @@ Confirmar persistência no MongoDB e a liberação do jogo na biblioteca (MySQL)
 	docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_payments').payment_audit_logs.find().toArray()"
 	docker exec mysql mysql -uroot -proot123 -e "USE fcgdb; SELECT * FROM Library;"
 
-### 5.3 Idempotência (PaymentsAPI) — Redis
+### 4.3 Idempotência (PaymentsAPI) — Redis
 
 Prova de que a mesma mensagem do RabbitMQ, entregue mais de uma vez (redelivery),
 não é processada duas vezes. Precisa de Python (só biblioteca padrão) instalado.
@@ -158,7 +160,7 @@ não é processada duas vezes. Precisa de Python (só biblioteca padrão) instal
 **Esperado:** mesmo com 3 entregas da mesma mensagem, só **1** registro novo de
 auditoria e **1** linha nova na `Library` — nada duplicado.
 
-### 5.4 Avaliação de jogos (CatalogAPI) — MongoDB + cache (parte já pronta antes)
+### 4.4 Avaliação de jogos (CatalogAPI) — MongoDB + cache
 
 Criar e listar uma avaliação:
 
@@ -174,26 +176,6 @@ Confirmar persistência no MongoDB:
 (Opcional) Cache: `GET game/todos` duas vezes seguidas — a 2ª deve vir bem mais
 rápida (TTL 60s).
 
-## 6. Pontos de atenção conhecidos
-
-- **Redis e Mongo sem senha/com senha fixa**: tudo certo pra ambiente local, mas
-  não é configuração pra produção — `redis:7-alpine` está sem autenticação, e o
-  Mongo usa usuário/senha fixos (`root`/`root123`) tanto no compose quanto nos
-  manifestos K8s.
-- **Endpoint de auditoria do PaymentsAPI sem autenticação**: `GET
-  payments/auditoria/{gameId}` está aberto porque a PaymentsAPI ainda não tem
-  nenhuma infraestrutura de JWT — já está comentado no código pra adicionar
-  `[Authorize]` quando isso mudar.
-- **Sem testes automatizados novos**: as classes de cache/repositório Mongo não
-  têm testes unitários (nenhum serviço tinha testes na camada de infra antes
-  disso também, então mantém o padrão que já existia).
-- **Possível conflito ao mesclar com a branch do serverless**: se a branch
-  `feature/serverless-notifications` do `K8s` for mesclada depois, o
-  `docker-compose.yml` provavelmente vai dar conflito, porque essa branch ainda
-  não tem `mongo`/`redis`.
-- **Bug de concorrência na idempotência já foi encontrado e corrigido durante o
-  teste** — ver a mensagem do grupo pra mais detalhes.
-
-## 7. Encerrar o ambiente
+## 5. Encerrar o ambiente
 
 	docker-compose down -v

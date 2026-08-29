@@ -4,6 +4,62 @@ metadata:
   name: grafana-dashboards-json
   namespace: fcg
 data:
+  request-count.json: |
+    {
+      "uid": "fcg-api-request-count",
+      "title": "API - Contagem Requisições",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "job", "type": "custom", "label": "API",
+            "query": "catalog-api, users-api", "multi": true, "includeAll": true,
+            "allValue": ".*", "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "route", "type": "query", "label": "Endpoint",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": { "query": "label_values(http_server_request_duration_seconds_count{job=~\"$job\"}, http_route)", "refId": "route" },
+            "refresh": 2, "multi": true, "includeAll": true, "allValue": ".*",
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "id": 1, "type": "stat", "title": "Total de requisições", "gridPos": { "h": 5, "w": 5, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short" }, "overrides": [] },
+          "targets": [ { "expr": "sum(increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\"}[$__range]))", "instant": true, "refId": "A" } ] },
+        { "id": 2, "type": "stat", "title": "HTTP 2xx", "gridPos": { "h": 5, "w": 5, "x": 5, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short", "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+          "targets": [ { "expr": "sum(increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"2..\"}[$__range])) or vector(0)", "instant": true, "refId": "A" } ] },
+        { "id": 3, "type": "stat", "title": "HTTP 3xx", "gridPos": { "h": 5, "w": 5, "x": 10, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+          "targets": [ { "expr": "sum(increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"3..\"}[$__range])) or vector(0)", "instant": true, "refId": "A" } ] },
+        { "id": 4, "type": "stat", "title": "HTTP 4xx", "gridPos": { "h": 5, "w": 5, "x": 15, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short", "color": { "mode": "fixed", "fixedColor": "orange" } }, "overrides": [] },
+          "targets": [ { "expr": "sum(increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"4..\"}[$__range])) or vector(0)", "instant": true, "refId": "A" } ] },
+        { "id": 5, "type": "stat", "title": "HTTP 5xx", "gridPos": { "h": 5, "w": 4, "x": 20, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short", "color": { "mode": "fixed", "fixedColor": "red" } }, "overrides": [] },
+          "targets": [ { "expr": "sum(increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[$__range])) or vector(0)", "instant": true, "refId": "A" } ] },
+        { "id": 10, "type": "table", "title": "Contagem por status HTTP", "gridPos": { "h": 10, "w": 12, "x": 0, "y": 5 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short" }, "overrides": [] },
+          "targets": [ { "expr": "sum by (job, http_response_status_code) (increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\"}[$__range]))", "format": "table", "instant": true, "refId": "A" } ] },
+        { "id": 11, "type": "table", "title": "Contagem por endpoint e status HTTP", "gridPos": { "h": 10, "w": 12, "x": 12, "y": 5 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "decimals": 0, "unit": "short" }, "overrides": [] },
+          "targets": [ { "expr": "sum by (job, http_route, http_request_method, http_response_status_code) (increase(http_server_request_duration_seconds_count{job=~\"$job\", http_route=~\"$route\"}[$__range]))", "format": "table", "instant": true, "refId": "A" } ] }
+      ]
+    }
   overview.json: |
     {
       "uid": "fcg-api-overview",

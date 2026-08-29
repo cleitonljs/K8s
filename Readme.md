@@ -1,5 +1,7 @@
 # Tech-Challenge - Fase 3
 
+# 1. Implementação de um API Gateway
+
 ## Segue abaixo passo a passo para instalar a aplicação FCG no Kubernetes utilizando o Kubernetes do Docker desktop.
 
 1. verificar se está habilitado o Kubernetes do Docker desktop:
@@ -122,7 +124,78 @@ Kong Manager: http://localhost:8002
 Admin API:    http://localhost:8001
 Gateway:      http://localhost:8080
 
-# Observabilidade (Prometheus + Grafana)
+# 2. Arquitetura Serverless
+
+1. Clonar todos os seguintes repositórios:
+	https://github.com/cleitonljs/K8s/
+	https://github.com/cleitonljs/NotificationsAPI
+	https://github.com/cleitonljs/PaymentsAPI
+	https://github.com/cleitonljs/CatalogAPI
+	https://github.com/cleitonljs/UsersAPI
+	
+	Serverless:
+
+	Foi feito o seguinte: Foi convertido o projeto NotificationsAPI para uma Lambda function.
+
+	O repositório abaixo contém o código fonte da função Lambda (serverless):
+	https://github.com/lSpenserl/NotificationsLambda
+	
+	O repositório abaixo contém o RabbitMqLambdaBridge (necessário para fazer a ponte entre o RabbitMq e a Lambda function).
+	https://github.com/lSpenserl/RabbitMqLambdaBridge
+
+	Detalhamento sobre o RabbitMqLambdaBridge: A NotificationsLambda serve só para criar o .zip,
+	e a RabbitMqLambdaBridge é o "gatilho" para acionar o serverless, uma vez que no local não temos Amazon MQ Event Source Mapping.
+	
+1.1 - Gerar zip:
+	
+	Rodar o comando abaixo, via powerShell:
+		dotnet lambda package --project-location .\NotificationsLambda --output-package .\NotificationsLambda.zip
+
+	O comando acima, criará um arquivo .zip contendo a função Lambda.
+	
+1.2 - Colar zip.
+
+	O .zip deve estar nesse local: C:\Tech-Challenge-Fase2\K8s\Docker-Compose\localstack\lambdas\NotificationsLambda.zip
+
+2. Verificar se está com o LocalStack instalado, executando o comando:
+	localstack --version
+
+3. Caso não esteja, executar: 
+	npm install -g @localstack/lstk
+
+4. Deixar o Docker Desktop rodando.
+
+5. Token:
+
+5.1 Acessar https://app.localstack.cloud/getting-started
+
+5.2. Copiar o token da página acima.
+
+5.3 Colar em no arquivo .env
+
+5.4 Criar arquivo .env na pasta C:\Tech-Challenge-Fase2\K8s\Docker-Compose. Esse arquivo não possui nome, é só a extensão mesmo. No seu conteúdo colar:
+	LOCALSTACK_AUTH_TOKEN="<token gerado no LocalStack>"
+
+6. Abra o arquivo C:\Tech-Challenge-Fase2\K8s\Docker-Compose\localstack\init\ready.d\01-create-lambda.sh no VS e salve ele no formato LF.
+
+7. Rodar o comando abaixo:
+	PS C:\git\TecChanleng(Grupo)\K8s\Docker-Compose> Docker compose up -d
+
+8. Em seguida, seguir o fluxo de criar usuário ou adquirir jogo no catálogo.
+
+8.1. Acessar o FGC API via http://localhost:8010/swagger/index.html
+8.2 executar /login:
+		{
+		  "email": "admin@email.com",
+		  "senha": "1234@Abc"
+		}
+9.3. copiar o token e se autenticar no swagger.
+
+10. Funcionamento:
+
+10.1 Container criado para o serverless (somente para a requisição; depois ele morre).
+
+# 3. Observabilidade (Prometheus + Grafana)
 
 CatalogAPI e UsersAPI (.NET 8) são instrumentadas com OpenTelemetry e expõem métricas Prometheus no
 próprio processo, em `/metrics`. Não é necessário nenhum agente ou sidecar adicional.
@@ -169,6 +242,187 @@ Acessar o Grafana (exposto via NodePort, mesmo padrão do Konga):
 Prometheus não é exposto via NodePort/Ingress — só é alcançável dentro do cluster (o Grafana já
 concentra a visualização) ou via `port-forward` pontual para depuração.
 
+# 4. Persistência Poliglota e Alta Performance
+
+Guia para o que foi implementado no
+item 4 da Fase 3: **MongoDB** para dado de schema flexível/alto volume e **Redis**
+como cache distribuído, agora nos três serviços (`UsersAPI`, `CatalogAPI`,
+`PaymentsAPI`), além da orquestração (`K8s`).
+
+## 1. Pré-requisitos
+
+- Docker Desktop instalado e rodando.
+- .NET 8 SDK instalado, com a ferramenta `dotnet-ef`:
+
+		dotnet tool install --global dotnet-ef
+
+## 2. Subir o ambiente completo
+
+A partir da pasta `K8s/Docker-Compose`:
+
+	cd K8s/Docker-Compose
+	docker-compose up --build -d
+
+Espere cerca de 1 minuto e confira que os 8 containers estão `Up` (`mysql`,
+`rabbitmq`, `mongo`, `redis`, `users-api`, `notifications-api`, `catalog-api`,
+`payments-api`):
+
+	docker-compose ps
+
+> **Normal reiniciar 1-2 vezes no começo:** `users-api`/`catalog-api` podem
+> reiniciar sozinhos logo no início num volume de MySQL novo (corrida na criação da
+> tabela de migrations). O `restart: always` resolve isso sozinho — se depois de
+> ~1 minuto todos estiverem `Up`, seguiu certo.
+
+### Criar as tabelas do MySQL
+
+O time optou por não versionar as migrations do EF Core no repositório, então é
+preciso gerar/aplicar uma vez por ambiente (rode a partir da raiz de cada repo):
+
+	# UsersAPI
+	$env:ConnectionStrings__DefaultConnection = "server=localhost;port=3306;database=fcgdb;user=root;password=root123"
+	dotnet ef migrations add CriacaoBanco --project Infrastructure/Infrastructure.csproj --startup-project UsersAPI/UsersAPI.csproj
+	dotnet ef database update --project Infrastructure/Infrastructure.csproj --startup-project UsersAPI/UsersAPI.csproj
+
+	# CatalogAPI (connection string padrão já aponta pra localhost, não precisa sobrescrever)
+	dotnet ef migrations add cria-tabelas-catalogAPI --project Infrastructure/Infrastructure.csproj --startup-project CatalogAPI/CatalogAPI.csproj
+	dotnet ef database update --project Infrastructure/Infrastructure.csproj --startup-project CatalogAPI/CatalogAPI.csproj
+
+Confirme:
+
+	docker exec mysql mysql -uroot -proot123 -e "USE fcgdb; SHOW TABLES;"
+
+Deve listar `Users`, `Games`, `Library` e `__EFMigrationsHistory`. **Não dê `git add`
+na pasta `Migrations/` que isso gera** — ela fica só local, fora do repositório.
+
+## 3. Login e criação de usuário
+
+Login do Admin já existe (`admin@email.com` / `1234@Abc`):
+
+	curl.exe -i http://localhost:8010/login -H "Content-Type: application/json" --% -d "{\"email\":\"admin@email.com\",\"senha\":\"1234@Abc\"}"
+
+Copie o `token` (`<ADMIN_TOKEN>`) e crie um jogo:
+
+	curl.exe -i http://localhost:8030/game/criar -H "Content-Type: application/json" -H "Authorization: Bearer <ADMIN_TOKEN>" --% -d "{\"nome\":\"The Witcher 3\",\"price\":49.90}"
+
+Crie um usuário comum e pegue o token dele também (`<USER_TOKEN>`):
+
+	curl.exe -i http://localhost:8010/usuario/criar -H "Content-Type: application/json" --% -d "{\"nome\":\"Usuario Teste\",\"email\":\"usuarioteste@email.com\",\"senha\":\"Senha123!\"}"
+	curl.exe -i http://localhost:8010/login -H "Content-Type: application/json" --% -d "{\"email\":\"usuarioteste@email.com\",\"senha\":\"Senha123!\"}"
+
+Anote o `id` do jogo criado (normalmente `1`, `<GAME_ID>` daqui pra frente) e o `id`
+do usuário comum (normalmente `2`).
+
+## 4. Roteiro de teste por funcionalidade
+
+### 4.1 Perfil estendido de usuário (UsersAPI) — MongoDB + cache
+
+Criar/atualizar o próprio perfil (usuário comum, id 2):
+
+	curl.exe -i -X PUT http://localhost:8010/usuario/2/perfil -H "Content-Type: application/json" -H "Authorization: Bearer <USER_TOKEN>" --% -d "{\"bio\":\"Jogador casual\",\"avatarUrl\":\"\",\"preferencias\":{}}"
+
+**Esperado:** `200 OK`, retorna o perfil salvo.
+
+Tentar ver o perfil do Admin (id 1) logado como o usuário comum:
+
+	curl.exe -i http://localhost:8010/usuario/1/perfil -H "Authorization: Bearer <USER_TOKEN>"
+
+**Esperado:** `403 Forbidden` — só o próprio usuário ou um Administrador pode
+ver/editar um perfil.
+
+Confirmar persistência no MongoDB:
+
+	docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_users').user_profiles.find().toArray()"
+
+	Limpar documentos:
+		docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_users').user_profiles.deleteMany({})"
+
+Confirmar persistência no redis:
+
+	docker exec -it redis redis-cli
+	keys *
+	flushall
+
+Confirmar o cache: chame `GET usuario/2/perfil` duas vezes — a 2ª deve
+ser bem mais rápida (TTL de 10 min), e aparece uma chave `users-api:users:perfil:2`
+em `docker exec redis redis-cli KEYS "*"`.
+
+### 4.2 Auditoria de pagamento (PaymentsAPI) — MongoDB
+
+Fluxo de compra ponta a ponta (CatalogAPI → RabbitMQ → PaymentsAPI → volta pro
+Catalog):
+
+	curl.exe -i -X POST http://localhost:8030/criar -H "Content-Type: application/json" -H "Authorization: Bearer <USER_TOKEN>" --% -d "{\"iDUsuario\":2,\"iDGame\":<GAME_ID>}"
+
+**Esperado:** `201 Created`. Aguarde ~3 segundos (processamento é assíncrono).
+
+Consultar a auditoria:
+
+	curl.exe -i http://localhost:8040/payments/auditoria/<GAME_ID>
+
+**Esperado:** `200 OK`, retorna o pagamento processado (status `Approved`).
+
+Confirmar persistência no MongoDB e a liberação do jogo na biblioteca (MySQL):
+
+	docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_payments').payment_audit_logs.find().toArray()"
+	docker exec mysql mysql -uroot -proot123 -e "USE fcgdb; SELECT * FROM Library;"
+
+### 4.3 Idempotência (PaymentsAPI) — Redis
+
+Prova de que a mesma mensagem do RabbitMQ, entregue mais de uma vez (redelivery),
+não é processada duas vezes. Precisa de Python (só biblioteca padrão) instalado.
+
+1. Pare o consumidor: `docker-compose stop payments-api`
+2. Faça uma nova compra (fica parada na fila, sem ninguém pra consumir):
+
+		curl.exe -i -X POST http://localhost:8030/criar -H "Content-Type: application/json" -H "Authorization: Bearer <USER_TOKEN>" --% -d "{\"iDUsuario\":2,\"iDGame\":<GAME_ID>}"
+
+3. Capture essa mensagem na fila `FGC-queue-payment` (sem removê-la) e publique
+   mais 1-2 cópias idênticas, com o mesmo `message_id` (via RabbitMQ Management
+   API, usuário/senha `guest`/`guest`, porta 15672):
+
+		python -c "
+		import json, urllib.request, base64
+		req = urllib.request.Request('http://localhost:15672/api/queues/%2f/FGC-queue-payment/get', data=json.dumps({'count':1,'ackmode':'ack_requeue_true','encoding':'auto','truncate':50000}).encode(), method='POST', headers={'Content-Type':'application/json'})
+		req.add_header('Authorization', 'Basic ' + base64.b64encode(b'guest:guest').decode())
+		peek = json.load(urllib.request.urlopen(req))[0]
+		def dup():
+		    body = {'properties': peek['properties'], 'routing_key': '', 'payload': peek['payload'], 'payload_encoding': 'string'}
+		    r = urllib.request.Request('http://localhost:15672/api/exchanges/%2f/FGC-queue-payment/publish', data=json.dumps(body).encode(), method='POST', headers={'Content-Type':'application/json'})
+		    r.add_header('Authorization', 'Basic ' + base64.b64encode(b'guest:guest').decode())
+		    print(urllib.request.urlopen(r).read().decode())
+		dup(); dup()
+		print('message_id duplicado:', peek['properties']['message_id'])
+		"
+
+4. Religue o consumidor: `docker-compose start payments-api`
+5. Aguarde uns 5 segundos e confira:
+
+		docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_payments').payment_audit_logs.countDocuments()"
+		docker exec mysql mysql -uroot -proot123 -e "USE fcgdb; SELECT * FROM Library;"
+
+**Esperado:** mesmo com 3 entregas da mesma mensagem, só **1** registro novo de
+auditoria e **1** linha nova na `Library` — nada duplicado.
+
+### 4.4 Avaliação de jogos (CatalogAPI) — MongoDB + cache
+
+Criar e listar uma avaliação:
+
+	curl.exe -i -X POST http://localhost:8030/game/<GAME_ID>/avaliacoes -H "Content-Type: application/json" -H "Authorization: Bearer <USER_TOKEN>" --% -d "{\"nota\":5,\"comentario\":\"Obra-prima, recomendo muito!\"}"
+	curl.exe -i http://localhost:8030/game/<GAME_ID>/avaliacoes -H "Authorization: Bearer <USER_TOKEN>"
+
+**Esperado:** `201` na criação, e a avaliação aparece na listagem.
+
+Confirmar persistência no MongoDB:
+
+	docker exec mongo mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval "db.getSiblingDB('fcg_catalog').game_reviews.find().toArray()"
+
+(Opcional) Cache: `GET game/todos` duas vezes seguidas — a 2ª deve vir bem mais
+rápida (TTL 60s).
+
+## 5. Encerrar o ambiente
+
+	docker-compose down -v
 
 
 # Tech-Challenge - Fase 2
